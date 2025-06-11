@@ -24,6 +24,10 @@ import google.generativeai as genai
 # GEMINI_API_KEY="YOUR_ACTUAL_GEMINI_API_KEY_HERE"
 GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY"))
 
+# --- SET PAGE CONFIG FIRST ---
+# This MUST be the first Streamlit command that runs in your script.
+st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded", icon="🔬")
+
 if not GEMINI_API_KEY:
     st.error("GEMINI_API_KEY not found. Please set it in Streamlit secrets or as an environment variable.")
     st.stop() # Stop the app if API key is not found
@@ -152,7 +156,8 @@ class RamanAnalyzer:
             st.info("No pre-trained ML model found or path invalid. A new (untrained) model will be used.")
 
         self.identifier = MolecularIdentifier()
-        self.database = self._load_databases("C:\\Users\\dpras\\OneDrive\\Desktop\\raman data\\raman data 1 .json" or [])
+        # Corrected file path using a raw string to avoid unicode escape errors
+        self.database = self._load_databases([r"C:\Users\dpras\OneDrive\Desktop\raman data\raman data 1 .json"])
         
         # Initialize Google Generative AI model
         try:
@@ -339,7 +344,7 @@ def fetch_pubchem_data(compound_name: str) -> Dict[str, Any]:
 
 # ------------------------ Streamlit Interface ------------------------
 def main():
-    st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded", icon="🔬")
+    # REMOVED st.set_page_config from here, it's now at the top of the script.
     st.title("🔬 Advanced AI-Powered Raman Analyzer")
     st.markdown("---")
 
