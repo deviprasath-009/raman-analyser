@@ -17,16 +17,16 @@ from typing import List, Dict, Any
 # Import for Google Generative AI
 import google.generativeai as genai
 
+# --- SET PAGE CONFIG FIRST ---
+# This MUST be the first Streamlit command that runs in your script.
+st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded")
+
 # --- Configuration for Google Gemini API ---
 # IMPORTANT: Store your API key securely, e.g., in Streamlit secrets or environment variables.
 # For demonstration, we'll read from Streamlit secrets.
 # In your Streamlit app, go to Settings -> Secrets and add:
 # GEMINI_API_KEY="YOUR_ACTUAL_GEMINI_API_KEY_HERE"
 GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY"))
-
-# --- SET PAGE CONFIG FIRST ---
-# This MUST be the first Streamlit command that runs in your script.
-st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded", icon="🔬")
 
 if not GEMINI_API_KEY:
     st.error("GEMINI_API_KEY not found. Please set it in Streamlit secrets or as an environment variable.")
@@ -35,7 +35,7 @@ if not GEMINI_API_KEY:
 genai.configure(api_key=GEMINI_API_KEY)
 # Choose a model, 'gemini-pro' is a good general-purpose model.
 # 'gemini-1.5-flash' or 'gemini-1.5-pro' are newer and potentially better, check pricing/free tier limits.
-GEMINI_MODEL_NAME = "gemini-pro"
+GEMINI_MODEL_NAME = "gemini-2.0-flash"
 
 
 # ------------------------ Utility Functions ------------------------
@@ -113,7 +113,7 @@ class ExpertInterpreter:
 # ------------------------ Molecular Identifier ------------------------
 class MolecularIdentifier:
     """Identifies potential compounds by matching detected peaks against a database."""
-    def __init__(self, tolerance: float = 10, min_matches: int = 1):
+    def __init__(self, tolerance: float = 50, min_matches: int = 1):
         self.tolerance = tolerance
         self.min_matches = min_matches
 
@@ -157,7 +157,9 @@ class RamanAnalyzer:
 
         self.identifier = MolecularIdentifier()
         # Corrected file path using a raw string to avoid unicode escape errors
-        self.database = self._load_databases([r"C:\Users\dpras\OneDrive\Desktop\raman data\raman data 1 .json"])
+        # Note: For Streamlit Cloud, this path needs to be relative to your project root, not an absolute Windows path.
+        # Ensure 'raman data 1 .json' is in the same directory as this script or a subfolder within your repo.
+        self.database = self._load_databases([r"C:\\Users\\dpras\\OneDrive\\Desktop\\raman data\\up.json"]) 
         
         # Initialize Google Generative AI model
         try:
@@ -182,7 +184,7 @@ class RamanAnalyzer:
                     full_path = os.path.join(script_dir, path)
 
                 if os.path.exists(full_path):
-                    with open(full_path, 'r') as f:
+                    with open(full_path, 'r',encoding='utf-8') as f:
                         data = json.load(f)
                         for cat, compounds in data.items():
                             db.setdefault(cat, []).extend(compounds)
