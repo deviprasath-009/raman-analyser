@@ -110,7 +110,7 @@ class RamanAnalyzer:
             except:
                 st.warning("Failed to load model, using new one.")
 
-        self.database = self._load_databases(json_paths)
+        self.database = self._load_databases(["data/up.json"])
         try:
             self.ai_generator_model = genai.GenerativeModel(GEMINI_MODEL_NAME)
         except:
