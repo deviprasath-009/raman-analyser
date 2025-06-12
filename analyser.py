@@ -103,43 +103,40 @@ class ExpertInterpreter:
                 break
 
 # ------------------------ Molecular Identifier ------------------------
-# ------------------------ Molecular Identifier ------------------------
 class MolecularIdentifier:
     """Identifies potential compounds by matching detected peaks against a database."""
     def __init__(self, tolerance: float = 30, min_matches: int = 1):
         self.tolerance = tolerance
         self.min_matches = min_matches
+
     def identify(self, peaks: List[float], database: Dict) -> List[Dict]:
-        """
-        Matches observed peaks against a reference database of compounds.
-        """
-    matches = []
+        """Matches observed peaks against a reference database of compounds."""
+        matches = []
 
-    if not isinstance(database, dict):
-        st.error("❌ Database format error: Expected a dictionary of categories.")
-         return matches
+        if not isinstance(database, dict):
+            st.error("❌ Database format error: Expected a dictionary of categories.")
+            return matches
 
-    for category, compounds in database.items():
-        if not isinstance(compounds, list):
-            continue  # skip malformed categories
-        for compound in compounds:
-            matched_count = 0
-            for ref_peak in compound.get("Peaks", []):
-                ref_wavenumber = ref_peak.get("Wavenumber")
-                if ref_wavenumber is not None:
-                    for obs_peak in peaks:
-                        if abs(obs_peak - ref_wavenumber) <= self.tolerance:
-                            matched_count += 1
-                            break
-            if matched_count >= self.min_matches:
-                matches.append({
-                    "Compound": compound.get("Name", "Unknown"),
-                    "Group": category,
-                    "Matched Peaks Count": matched_count
-                })
+        for category, compounds in database.items():
+            if not isinstance(compounds, list):
+                continue  # skip malformed categories
+            for compound in compounds:
+                matched_count = 0
+                for ref_peak in compound.get("Peaks", []):
+                    ref_wavenumber = ref_peak.get("Wavenumber")
+                    if ref_wavenumber is not None:
+                        for obs_peak in peaks:
+                            if abs(obs_peak - ref_wavenumber) <= self.tolerance:
+                                matched_count += 1
+                                break
+                if matched_count >= self.min_matches:
+                    matches.append({
+                        "Compound": compound.get("Name", "Unknown"),
+                        "Group": category,
+                        "Matched Peaks Count": matched_count
+                    })
 
-    return sorted(matches, key=lambda x: x["Matched Peaks Count"], reverse=True)
-
+        return sorted(matches, key=lambda x: x["Matched Peaks Count"], reverse=True)
 
 
 # ------------------------ Analyzer Core ------------------------
@@ -165,11 +162,58 @@ class RamanAnalyzer:
         except Exception as e:
             st.error(f"Could not load Google Gemini model: {e}. AI summary generation will not work.")
             self.ai_generator_model = None
+
     def _load_databases(self, paths: List[str]) -> Dict:
         """Loads Raman spectral databases from JSON files or URLs."""
-    db = {}
-    if not paths:
-        st.warning("No database paths provided. Database matching will be empty.")
+        db = {}
+        if not paths:
+            st.warning("No database paths provided. Database matching will be empty.")
+            return db
+
+        for path in paths:
+            try:
+                # Load from URL or local file
+                if path.startswith(('http://', 'https://')):
+                    response = requests.get(path)
+                    response.raise_for_status()
+                    data = response.json()
+                    st.success(f"✅ Loaded database from URL: {path}")
+                else:
+                    # Resolve relative local path
+                    if not os.path.isabs(path):
+                        script_dir = os.path.dirname(os.path.abspath(__file__))
+                        full_path = os.path.join(script_dir, path)
+                    else:
+                        full_path = path
+
+                    if os.path.exists(full_path):
+                        with open(full_path, 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                        st.success(f"✅ Loaded database from file: {os.path.basename(path)}")
+                    else:
+                        st.warning(f"⚠️ Database file not found at: {full_path}")
+                        continue
+
+                # Flexible structure handling
+                if isinstance(data, dict):
+                    for category, compounds in data.items():
+                        if isinstance(compounds, list):
+                            db.setdefault(category, []).extend(compounds)
+                        else:
+                            st.warning(f"⚠️ Category '{category}' is not a list, skipping.")
+                elif isinstance(data, list):
+                    db.setdefault("Uncategorized", []).extend(data)
+                    st.warning("⚠️ JSON file is a list. Wrapped under 'Uncategorized'.")
+                else:
+                    st.error(f"❌ Unsupported JSON structure in {path}. Skipped.")
+
+            except json.JSONDecodeError as e:
+                st.error(f"❌ JSON parsing error in {path}: {e}")
+            except requests.exceptions.RequestException as e:
+                st.error(f"❌ Request error loading from {path}: {e}")
+            except Exception as e:
+                st.error(f"❌ Unexpected error loading {path}: {e}")
+
         return db
 
     for path in paths:
