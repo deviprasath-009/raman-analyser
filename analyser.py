@@ -11,6 +11,7 @@ import streamlit as st
 import json
 import joblib
 import os
+from urllib.parse import urlparse
 import requests
 from typing import List, Dict, Any
 
@@ -167,7 +168,6 @@ class RamanAnalyzer:
         except Exception as e:
             st.error(f"Could not load Google Gemini model: {e}. AI summary generation will not work.")
             self.ai_generator_model = None
-
     def _load_databases(self, paths: List[str]) -> Dict:
     """Loads Raman spectral databases from JSON files or URLs."""
     db = {}
@@ -177,14 +177,14 @@ class RamanAnalyzer:
 
     for path in paths:
         try:
-            # Handle both URL and file paths
+            # Load from URL or local file
             if path.startswith(('http://', 'https://')):
                 response = requests.get(path)
                 response.raise_for_status()
                 data = response.json()
-                st.success(f"Successfully loaded database from URL: {path}")
+                st.success(f"✅ Loaded database from URL: {path}")
             else:
-                # Handle local file path
+                # Resolve relative local path
                 if not os.path.isabs(path):
                     script_dir = os.path.dirname(os.path.abspath(__file__))
                     full_path = os.path.join(script_dir, path)
@@ -194,23 +194,33 @@ class RamanAnalyzer:
                 if os.path.exists(full_path):
                     with open(full_path, 'r', encoding='utf-8') as f:
                         data = json.load(f)
-                    st.success(f"Successfully loaded database from file: {os.path.basename(path)}")
+                    st.success(f"✅ Loaded database from file: {os.path.basename(path)}")
                 else:
-                    st.warning(f"Database file not found at: {full_path}")
+                    st.warning(f"⚠️ Database file not found at: {full_path}")
                     continue
-            
-            # Merge the loaded data into our database
-            for category, compounds in data.items():
-                db.setdefault(category, []).extend(compounds)
-                
+
+            # ✅ Flexible structure handling
+            if isinstance(data, dict):
+                for category, compounds in data.items():
+                    if isinstance(compounds, list):
+                        db.setdefault(category, []).extend(compounds)
+                    else:
+                        st.warning(f"⚠️ Category '{category}' is not a list, skipping.")
+            elif isinstance(data, list):
+                db.setdefault("Uncategorized", []).extend(data)
+                st.warning("⚠️ JSON file is a list. Wrapped under 'Uncategorized'.")
+            else:
+                st.error(f"❌ Unsupported JSON structure in {path}. Skipped.")
+
         except json.JSONDecodeError as e:
-            st.error(f"Failed to parse JSON from {path}: {str(e)}")
+            st.error(f"❌ JSON parsing error in {path}: {e}")
         except requests.exceptions.RequestException as e:
-            st.error(f"Failed to fetch database from {path}: {str(e)}")
+            st.error(f"❌ Request error loading from {path}: {e}")
         except Exception as e:
-            st.error(f"Unexpected error loading {path}: {str(e)}")
-    
+            st.error(f"❌ Unexpected error loading {path}: {e}")
+
     return db
+
     def analyze(self, wavenumbers: np.ndarray, intensities: np.ndarray, metadata: Dict) -> Dict:
         """Performs the full Raman analysis workflow."""
         intensities_despiked = despike_spectrum(intensities)
