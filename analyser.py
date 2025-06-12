@@ -343,7 +343,7 @@ def main():
     script_directory = os.path.dirname(os.path.abspath(__file__))
     
     # Database configuration - use GitHub URL
-    GITHUB_DB_URL = "https://raw.githubusercontent.com/dprasad26/raman/main/raman%20data%201%20.json"
+    GITHUB_DB_URL = "https://raw.githubusercontent.com/deviprasath-009/raman-analyser/refs/heads/main/data/up.json"
     
     # Local fallback path (if needed)
     LOCAL_DB_PATH = os.path.join(script_directory, "raman_database.json")
