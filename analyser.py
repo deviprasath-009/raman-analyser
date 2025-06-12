@@ -166,7 +166,7 @@ class RamanAnalyzer:
             st.error(f"Could not load Google Gemini model: {e}. AI summary generation will not work.")
             self.ai_generator_model = None
     def _load_databases(self, paths: List[str]) -> Dict:
-    """Loads Raman spectral databases from JSON files or URLs."""
+        """Loads Raman spectral databases from JSON files or URLs."""
     db = {}
     if not paths:
         st.warning("No database paths provided. Database matching will be empty.")
