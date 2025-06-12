@@ -117,7 +117,7 @@ class MolecularIdentifier:
 
     if not isinstance(database, dict):
         st.error("❌ Database format error: Expected a dictionary of categories.")
-        return matches
+         return matches
 
     for category, compounds in database.items():
         if not isinstance(compounds, list):
