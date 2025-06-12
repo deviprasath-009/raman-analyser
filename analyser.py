@@ -106,7 +106,7 @@ class ExpertInterpreter:
 # ------------------------ Molecular Identifier ------------------------
 class MolecularIdentifier:
     """Identifies potential compounds by matching detected peaks against a database."""
-    def __init__(self, tolerance: float = 50, min_matches: int = 1):
+    def __init__(self, tolerance: float = 30, min_matches: int = 1):
         self.tolerance = tolerance
         self.min_matches = min_matches
     def identify(self, peaks: List[float], database: Dict) -> List[Dict]:
@@ -262,7 +262,7 @@ class RamanAnalyzer:
         """Generates a matplotlib plot of the Raman spectrum with detected peaks."""
         plt.style.use('seaborn-v0_8-darkgrid')
 
-        fig, ax = plt.subplots(figsize=(10, 5))
+        fig, ax = plt.subplots(figsize=(5, 5))
         ax.plot(wavenumbers, intensities, label='Spectrum', color='#1f77b4', linewidth=1.5)
         
         peak_indices = np.searchsorted(wavenumbers, peaks)
@@ -359,7 +359,7 @@ def fetch_pubchem_data(compound_name: str) -> Dict[str, Any]:
 
 # ------------------------ Streamlit Interface ------------------------
 def main():
-    st.title("🔬 Advanced AI-Powered Raman Analyzer")
+    st.title("rudra's Raman Analyzer")
     st.markdown("---")
 
     # Get current script directory
