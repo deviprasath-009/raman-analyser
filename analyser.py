@@ -102,6 +102,7 @@ class ExpertInterpreter:
                 break
 
 # ------------------------ Molecular Identifier ------------------------
+# ------------------------ Molecular Identifier ------------------------
 class MolecularIdentifier:
     """Identifies potential compounds by matching detected peaks against a database."""
     def __init__(self, tolerance: float = 50, min_matches: int = 1):
@@ -111,8 +112,18 @@ class MolecularIdentifier:
     def identify(self, peaks: List[float], database: Dict) -> List[Dict]:
         """
         Matches observed peaks against a database of reference compounds.
+        
+        Args:
+            peaks: List of observed peak wavenumbers
+            database: Dictionary containing reference compounds and their peaks
+            
+        Returns:
+            List of dictionaries containing match information
         """
         matches = []
+        if not database:
+            return matches
+            
         for category, compounds in database.items():
             for compound in compounds:
                 matched_count = 0
@@ -131,6 +142,7 @@ class MolecularIdentifier:
                         "Matched Peaks Count": matched_count
                     })
         return sorted(matches, key=lambda x: x["Matched Peaks Count"], reverse=True)
+
 
 # ------------------------ Analyzer Core ------------------------
 class RamanAnalyzer:
@@ -157,44 +169,48 @@ class RamanAnalyzer:
             self.ai_generator_model = None
 
     def _load_databases(self, paths: List[str]) -> Dict:
-        """Loads Raman spectral databases from JSON files or GitHub URLs."""
-        db = {}
-        if not paths:
-            st.warning("No database JSON paths provided. Database matching will be empty.")
-            return db
-
-        for path in paths:
-            try:
-                # Check if path is a URL
-                if path.startswith('http'):
-                    response = requests.get(path)
-                    response.raise_for_status()
-                    data = response.json()
-                    st.success(f"Successfully loaded database from GitHub: {path}")
-                else:
-                    # Handle local file path
-                    if not os.path.isabs(path):
-                        script_dir = os.path.dirname(os.path.abspath(__file__))
-                        full_path = os.path.join(script_dir, path)
-                    else:
-                        full_path = path
-
-                    if os.path.exists(full_path):
-                        with open(full_path, 'r', encoding='utf-8') as f:
-                            data = json.load(f)
-                        st.success(f"Successfully loaded database from '{os.path.basename(path)}'.")
-                    else:
-                        st.warning(f"Database file not found at '{full_path}'. Skipping.")
-                        continue
-                
-                # Merge data into main database
-                for cat, compounds in data.items():
-                    db.setdefault(cat, []).extend(compounds)
-
-            except Exception as e:
-                st.error(f"Error loading database from '{path}': {e}")
+    """Loads Raman spectral databases from JSON files or URLs."""
+    db = {}
+    if not paths:
+        st.warning("No database paths provided. Database matching will be empty.")
         return db
 
+    for path in paths:
+        try:
+            # Handle both URL and file paths
+            if path.startswith(('http://', 'https://')):
+                response = requests.get(path)
+                response.raise_for_status()
+                data = response.json()
+                st.success(f"Successfully loaded database from URL: {path}")
+            else:
+                # Handle local file path
+                if not os.path.isabs(path):
+                    script_dir = os.path.dirname(os.path.abspath(__file__))
+                    full_path = os.path.join(script_dir, path)
+                else:
+                    full_path = path
+
+                if os.path.exists(full_path):
+                    with open(full_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    st.success(f"Successfully loaded database from file: {os.path.basename(path)}")
+                else:
+                    st.warning(f"Database file not found at: {full_path}")
+                    continue
+            
+            # Merge the loaded data into our database
+            for category, compounds in data.items():
+                db.setdefault(category, []).extend(compounds)
+                
+        except json.JSONDecodeError as e:
+            st.error(f"Failed to parse JSON from {path}: {str(e)}")
+        except requests.exceptions.RequestException as e:
+            st.error(f"Failed to fetch database from {path}: {str(e)}")
+        except Exception as e:
+            st.error(f"Unexpected error loading {path}: {str(e)}")
+    
+    return db
     def analyze(self, wavenumbers: np.ndarray, intensities: np.ndarray, metadata: Dict) -> Dict:
         """Performs the full Raman analysis workflow."""
         intensities_despiked = despike_spectrum(intensities)
