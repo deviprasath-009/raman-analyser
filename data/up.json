@@ -1,541 +1,603 @@
-[
-  {
-    "Name": "Methanol",
-    "Peak (cm⁻¹)": 2830,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C–H symmetric stretch"
-  },
-  {
-    "Name": "Methanol",
-    "Peak (cm⁻¹)": 1030,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C–O stretch"
-  },
-  {
-    "Name": "Methanol",
-    "Peak (cm⁻¹)": 1450,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "CH₃ bend"
-  },
-  {
-    "Name": "Methanol",
-    "Peak (cm⁻¹)": 3300,
-    "Intensity": "W",
-    "Num_Intensity": 1,
-    "Assignment": "O–H stretch"
-  },
-  {
-    "Name": "Ethanol",
-    "Peak (cm⁻¹)": 880,
-    "Intensity": "MS",
-    "Num_Intensity": 3,
-    "Assignment": "C–C–O bend"
-  },
-  {
-    "Name": "Ethanol",
-    "Peak (cm⁻¹)": 1050,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C–O stretch"
-  },
-  {
-    "Name": "Ethanol",
-    "Peak (cm⁻¹)": 2900,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C–H stretch"
-  },
-  {
-    "Name": "Ethanol",
-    "Peak (cm⁻¹)": 1450,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "CH₂ bend"
-  },
-  {
-    "Name": "Ethanol",
-    "Peak (cm⁻¹)": 3300,
-    "Intensity": "W",
-    "Num_Intensity": 1,
-    "Assignment": "O–H stretch"
-  },
-  {
-    "Name": "Isopropanol",
-    "Peak (cm⁻¹)": 820,
-    "Intensity": "MS",
-    "Num_Intensity": 3,
-    "Assignment": "C–C–O bend"
-  },
-  {
-    "Name": "Isopropanol",
-    "Peak (cm⁻¹)": 1130,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C–O stretch"
-  },
-  {
-    "Name": "Isopropanol",
-    "Peak (cm⁻¹)": 2900,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C–H stretch"
-  },
-  {
-    "Name": "Isopropanol",
-    "Peak (cm⁻¹)": 1450,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "CH₃ bend"
-  },
-  {
-    "Name": "Isopropanol",
-    "Peak (cm⁻¹)": 3400,
-    "Intensity": "W",
-    "Num_Intensity": 1,
-    "Assignment": "O–H stretch"
-  },
-  {
-    "Name": "Glycerol",
-    "Peak (cm⁻¹)": 1110,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C–O stretch"
-  },
-  {
-    "Name": "Glycerol",
-    "Peak (cm⁻¹)": 1460,
-    "Intensity": "MS",
-    "Num_Intensity": 3,
-    "Assignment": "CH₂ bend"
-  },
-  {
-    "Name": "Glycerol",
-    "Peak (cm⁻¹)": 850,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "C–C–O bend"
-  },
-  {
-    "Name": "Glycerol",
-    "Peak (cm⁻¹)": 2900,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C–H stretch"
-  },
-  {
-    "Name": "Glycerol",
-    "Peak (cm⁻¹)": 3400,
-    "Intensity": "W",
-    "Num_Intensity": 1,
-    "Assignment": "O–H stretch"
-  },
-  {
-    "Name": "Phenol",
-    "Peak (cm⁻¹)": 1600,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "Aromatic ring stretch"
-  },
-  {
-    "Name": "Phenol",
-    "Peak (cm⁻¹)": 1000,
-    "Intensity": "MS",
-    "Num_Intensity": 3,
-    "Assignment": "Ring breathing"
-  },
-  {
-    "Name": "Phenol",
-    "Peak (cm⁻¹)": 1200,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "C–O stretch"
-  },
-  {
-    "Name": "Phenol",
-    "Peak (cm⁻¹)": 1350,
-    "Intensity": "W",
-    "Num_Intensity": 1,
-    "Assignment": "O–H bend"
-  },
-  {
-    "Name": "Phenol",
-    "Peak (cm⁻¹)": 3400,
-    "Intensity": "W",
-    "Num_Intensity": 1,
-    "Assignment": "O–H stretch"
-  },
-  {
-    "Name": "Benzyl Alcohol",
-    "Peak (cm⁻¹)": 1030,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C–O stretch"
-  },
-  {
-    "Name": "Benzyl Alcohol",
-    "Peak (cm⁻¹)": 1600,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "Aromatic ring"
-  },
-  {
-    "Name": "Benzyl Alcohol",
-    "Peak (cm⁻¹)": 700,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "C–H bend"
-  },
-  {
-    "Name": "Benzyl Alcohol",
-    "Peak (cm⁻¹)": 1450,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "CH₂ bend"
-  },
-  {
-    "Name": "Benzyl Alcohol",
-    "Peak (cm⁻¹)": 3400,
-    "Intensity": "W",
-    "Num_Intensity": 1,
-    "Assignment": "O–H stretch"
-  },
-  {
-    "Name": "Formic Acid",
-    "Peak (cm⁻¹)": 2960,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C–H stretch"
-  },
-  {
-    "Name": "Formic Acid",
-    "Peak (cm⁻¹)": 1665,
-    "Intensity": "VS",
-    "Num_Intensity": 5,
-    "Assignment": "C=O stretch"
-  },
-  {
-    "Name": "Formic Acid",
-    "Peak (cm⁻¹)": 1400,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "C–H bend"
-  },
-  {
-    "Name": "Formic Acid",
-    "Peak (cm⁻¹)": 1200,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "C–O stretch"
-  },
-  {
-    "Name": "Formic Acid",
-    "Peak (cm⁻¹)": 1060,
-    "Intensity": "W",
-    "Num_Intensity": 1,
-    "Assignment": "C–H twist"
-  },
-  {
-    "Name": "Formic Acid",
-    "Peak (cm⁻¹)": 680,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "OCO bend"
-  },
-  {
-    "Name": "Acetic Acid",
-    "Peak (cm⁻¹)": 2960,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C–H stretch"
-  },
-  {
-    "Name": "Acetic Acid",
-    "Peak (cm⁻¹)": 1665,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C=O stretch"
-  },
-  {
-    "Name": "Acetic Acid",
-    "Peak (cm⁻¹)": 1400,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "CH₃ bend"
-  },
-  {
-    "Name": "Acetic Acid",
-    "Peak (cm⁻¹)": 1200,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "C–O stretch"
-  },
-  {
-    "Name": "Acetic Acid",
-    "Peak (cm⁻¹)": 1060,
-    "Intensity": "W",
-    "Num_Intensity": 1,
-    "Assignment": "C–H twist"
-  },
-  {
-    "Name": "Acetic Acid",
-    "Peak (cm⁻¹)": 680,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "OCO bend"
-  },
-  {
-    "Name": "Acetic Acid",
-    "Peak (cm⁻¹)": 618,
-    "Intensity": "W+",
-    "Num_Intensity": 1,
-    "Assignment": "Skeletal deformation"
-  },
-  {
-    "Name": "Oxalic Acid",
-    "Peak (cm⁻¹)": 1700,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C=O stretch"
-  },
-  {
-    "Name": "Oxalic Acid",
-    "Peak (cm⁻¹)": 1460,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "O–H bend"
-  },
-  {
-    "Name": "Oxalic Acid",
-    "Peak (cm⁻¹)": 890,
-    "Intensity": "MS",
-    "Num_Intensity": 3,
-    "Assignment": "O–C=O bend"
-  },
-  {
-    "Name": "Oxalic Acid",
-    "Peak (cm⁻¹)": 540,
-    "Intensity": "W",
-    "Num_Intensity": 1,
-    "Assignment": "O–C–O deformation"
-  },
-  {
-    "Name": "Citric Acid",
-    "Peak (cm⁻¹)": 1740,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C=O stretch"
-  },
-  {
-    "Name": "Citric Acid",
-    "Peak (cm⁻¹)": 1450,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "CH₂ bend"
-  },
-  {
-    "Name": "Citric Acid",
-    "Peak (cm⁻¹)": 1300,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "C–O–H bend"
-  },
-  {
-    "Name": "Citric Acid",
-    "Peak (cm⁻¹)": 950,
-    "Intensity": "MS",
-    "Num_Intensity": 3,
-    "Assignment": "C–C stretch"
-  },
-  {
-    "Name": "Citric Acid",
-    "Peak (cm⁻¹)": 850,
-    "Intensity": "W",
-    "Num_Intensity": 1,
-    "Assignment": "C–C–O bend"
-  },
-  {
-    "Name": "Methyl Acetate",
-    "Peak (cm⁻¹)": 1745,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C=O stretch"
-  },
-  {
-    "Name": "Methyl Acetate",
-    "Peak (cm⁻¹)": 1240,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "C–O–C asym stretch"
-  },
-  {
-    "Name": "Methyl Acetate",
-    "Peak (cm⁻¹)": 1045,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "C–O–C sym stretch"
-  },
-  {
-    "Name": "Ethyl Acetate",
-    "Peak (cm⁻¹)": 1735,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C=O stretch"
-  },
-  {
-    "Name": "Ethyl Acetate",
-    "Peak (cm⁻¹)": 1260,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "C–O–C asym stretch"
-  },
-  {
-    "Name": "Ethyl Acetate",
-    "Peak (cm⁻¹)": 860,
-    "Intensity": "W",
-    "Num_Intensity": 1,
-    "Assignment": "CH₂ rock"
-  },
-  {
-    "Name": "Butyl Acetate",
-    "Peak (cm⁻¹)": 1725,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C=O stretch"
-  },
-  {
-    "Name": "Butyl Acetate",
-    "Peak (cm⁻¹)": 1280,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "C–O–C asym stretch"
-  },
-  {
-    "Name": "Butyl Acetate",
-    "Peak (cm⁻¹)": 1460,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "CH₂ bend"
-  },
-  {
-    "Name": "Phthalate Ester",
-    "Peak (cm⁻¹)": 1720,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C=O stretch"
-  },
-  {
-    "Name": "Phthalate Ester",
-    "Peak (cm⁻¹)": 1600,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "Aromatic ring"
-  },
-  {
-    "Name": "Phthalate Ester",
-    "Peak (cm⁻¹)": 1120,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "C–O–C stretch"
-  },
-  {
-    "Name": "Phthalate Ester",
-    "Peak (cm⁻¹)": 740,
-    "Intensity": "W",
-    "Num_Intensity": 1,
-    "Assignment": "Ring bend"
-  },
-  {
-    "Name": "ATP",
-    "Peak (cm⁻¹)": 1640,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "Adenine ring"
-  },
-  {
-    "Name": "ATP",
-    "Peak (cm⁻¹)": 1485,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "Purine vibration"
-  },
-  {
-    "Name": "ATP",
-    "Peak (cm⁻¹)": 1240,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "PO₂⁻ stretch"
-  },
-  {
-    "Name": "ATP",
-    "Peak (cm⁻¹)": 1080,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "PO₄³⁻ sym stretch"
-  },
-  {
-    "Name": "ATP",
-    "Peak (cm⁻¹)": 785,
-    "Intensity": "W",
-    "Num_Intensity": 1,
-    "Assignment": "Ribose vibration"
-  },
-  {
-    "Name": "DNA",
-    "Peak (cm⁻¹)": 1665,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C=O/NH₂"
-  },
-  {
-    "Name": "DNA",
-    "Peak (cm⁻¹)": 1575,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "Pyrimidine ring"
-  },
-  {
-    "Name": "DNA",
-    "Peak (cm⁻¹)": 1090,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "Phosphate stretch"
-  },
-  {
-    "Name": "DNA",
-    "Peak (cm⁻¹)": 830,
-    "Intensity": "W",
-    "Num_Intensity": 1,
-    "Assignment": "Phosphodiester"
-  },
-  {
-    "Name": "RNA",
-    "Peak (cm⁻¹)": 1695,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "C=O stretch"
-  },
-  {
-    "Name": "RNA",
-    "Peak (cm⁻¹)": 1605,
-    "Intensity": "M",
-    "Num_Intensity": 2,
-    "Assignment": "Base vibration"
-  },
-  {
-    "Name": "RNA",
-    "Peak (cm⁻¹)": 1105,
-    "Intensity": "S",
-    "Num_Intensity": 4,
-    "Assignment": "Phosphate stretch"
-  },
-  {
-    "Name": "RNA",
-    "Peak (cm⁻¹)": 815,
-    "Intensity": "W",
-    "Num_Intensity": 1,
-    "Assignment": "Ribose pucker"
-  }
-]
+{
+  "ammonium waste": [
+    {
+      "Name": "Urea",
+      "Peaks": [
+        {
+          "Wavenumber": 1003,
+          "Intensity": "VS",
+          "Num_Intensity": 5,
+          "Shape": "Gaussian",
+          "FWHM": 10,
+          "Asymmetry": 0.05,
+          "Assignment": "C-N symmetric stretch"
+        },
+        {
+          "Wavenumber": 1460,
+          "Intensity": "S",
+          "Num_Intensity": 4,
+          "Shape": "Gaussian",
+          "FWHM": 12,
+          "Asymmetry": 0.1,
+          "Assignment": "N-H bend"
+        }
+      ]
+    },
+    {
+      "Name": "Creatinine",
+      "Peaks": [
+        {
+          "Wavenumber": 680,
+          "Intensity": "M",
+          "Num_Intensity": 3,
+          "Shape": "Lorentzian",
+          "FWHM": 15,
+          "Asymmetry": 0.2,
+          "Assignment": "Ring deformation"
+        },
+        {
+          "Wavenumber": 1650,
+          "Intensity": "VS",
+          "Num_Intensity": 5,
+          "Shape": "Gaussian",
+          "FWHM": 8,
+          "Asymmetry": 0.05,
+          "Assignment": "C=O stretch"
+        }
+      ]
+    },
+    {
+      "Name": "Water",
+      "Peaks": [
+        {
+          "Wavenumber": 3400,
+          "Intensity": "S",
+          "Num_Intensity": 4,
+          "Shape": "Lorentzian",
+          "FWHM": 80,
+          "Asymmetry": 0.3,
+          "Assignment": "O-H stretch"
+        },
+        {
+          "Wavenumber": 1640,
+          "Intensity": "M",
+          "Num_Intensity": 3,
+          "Shape": "Lorentzian",
+          "FWHM": 25,
+          "Asymmetry": 0.25,
+          "Assignment": "H-O-H bend"
+        }
+      ]
+    },
+    {
+      "Name": "Ammonium",
+      "Peaks": [
+        {
+          "Wavenumber": 1430,
+          "Intensity": "M",
+          "Num_Intensity": 3,
+          "Shape": "Gaussian",
+          "FWHM": 18,
+          "Asymmetry": 0.15,
+          "Assignment": "N-H bend"
+        }
+      ]
+    },
+    {
+      "Name": "Bicarbonate",
+      "Peaks": [
+        {
+          "Wavenumber": 1015,
+          "Intensity": "S",
+          "Num_Intensity": 4,
+          "Shape": "Gaussian",
+          "FWHM": 12,
+          "Asymmetry": 0.1,
+          "Assignment": "C-O symmetric stretch"
+        }
+      ]
+    },
+    {
+      "Name": " Organic Acids",
+      "Peaks": [
+        {
+          "Wavenumber": 1720,
+          "Intensity": "W",
+          "Num_Intensity": 2,
+          "Shape": "Gaussian",
+          "FWHM": 20,
+          "Asymmetry": 0.2,
+          "Assignment": "C=O stretch"
+        },
+        {
+          "Wavenumber": 1400,
+          "Intensity": "W",
+          "Num_Intensity": 2,
+          "Shape": "Lorentzian",
+          "FWHM": 25,
+          "Asymmetry": 0.3,
+          "Assignment": "C-O stretch"
+        }
+      ]
+    }
+  ],
+  "nitro waste": [
+    {
+      "Name": "Calcium Oxalate Dihydrate",
+      "Peaks": [
+        {
+          "Wavenumber": 3419,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Gaussian",
+          "FWHM": 12,
+          "Asymmetry": 0.1,
+          "Assignment": "O-H stretching"
+        },
+        {
+          "Wavenumber": 3292,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Gaussian",
+          "FWHM": 14,
+          "Asymmetry": 0.15,
+          "Assignment": "O-H stretching"
+        },
+        {
+          "Wavenumber": 3268,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Gaussian",
+          "FWHM": 13,
+          "Asymmetry": 0.12,
+          "Assignment": "O-H stretching"
+        },
+        {
+          "Wavenumber": 3218,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Gaussian",
+          "FWHM": 15,
+          "Asymmetry": 0.18,
+          "Assignment": "O-H stretching"
+        },
+        {
+          "Wavenumber": 2935,
+          "Intensity": "S",
+          "Num_Intensity": 4,
+          "Shape": "Gaussian",
+          "FWHM": 16,
+          "Asymmetry": 0.05,
+          "Assignment": "CH₂ stretching"
+        },
+        {
+          "Wavenumber": 1474,
+          "Intensity": "W",
+          "Num_Intensity": 1,
+          "Shape": "Lorentzian",
+          "FWHM": 20,
+          "Asymmetry": 0.25,
+          "Assignment": "C=O vibration"
+        }
+      ]
+    },
+    {
+      "Name": "Cystine",
+      "Peaks": [
+        {
+          "Wavenumber": 2919,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Gaussian",
+          "FWHM": 18,
+          "Asymmetry": 0.08,
+          "Assignment": "CH₂ groups"
+        }
+      ]
+    },
+    {
+      "Name": "Oxammite (Ammonium Oxalate)",
+      "Peaks": [
+        {
+          "Wavenumber": 2194,
+          "Intensity": "VS",
+          "Num_Intensity": 5,
+          "Shape": "Gaussian",
+          "FWHM": 10,
+          "Asymmetry": 0.02,
+          "Assignment": "C≡C stretching"
+        },
+        {
+          "Wavenumber": 2189,
+          "Intensity": "VS",
+          "Num_Intensity": 5,
+          "Shape": "Gaussian",
+          "FWHM": 9,
+          "Asymmetry": 0.03,
+          "Assignment": "C≡C stretching"
+        },
+        {
+          "Wavenumber": 2182,
+          "Intensity": "VS",
+          "Num_Intensity": 5,
+          "Shape": "Gaussian",
+          "FWHM": 11,
+          "Asymmetry": 0.01,
+          "Assignment": "C≡C stretching"
+        },
+        {
+          "Wavenumber": 2130,
+          "Intensity": "S",
+          "Num_Intensity": 4,
+          "Shape": "Gaussian",
+          "FWHM": 12,
+          "Asymmetry": 0.05,
+          "Assignment": "C≡C stretching"
+        },
+        {
+          "Wavenumber": 1994,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Lorentzian",
+          "FWHM": 15,
+          "Asymmetry": 0.2,
+          "Assignment": "C=O stretching"
+        },
+        {
+          "Wavenumber": 404,
+          "Intensity": "W",
+          "Num_Intensity": 1,
+          "Shape": "Lorentzian",
+          "FWHM": 25,
+          "Asymmetry": 0.3,
+          "Assignment": "Ring deformation"
+        }
+      ]
+    },
+    {
+      "Name": "Uric Acid",
+      "Peaks": [
+        {
+          "Wavenumber": 1684,
+          "Intensity": "VS",
+          "Num_Intensity": 5,
+          "Shape": "Gaussian",
+          "FWHM": 8,
+          "Asymmetry": 0.01,
+          "Assignment": "C=O stretching"
+        },
+        {
+          "Wavenumber": 1601,
+          "Intensity": "S",
+          "Num_Intensity": 4,
+          "Shape": "Gaussian",
+          "FWHM": 14,
+          "Asymmetry": 0.1,
+          "Assignment": "C-N stretching"
+        },
+        {
+          "Wavenumber": 1283,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Lorentzian",
+          "FWHM": 18,
+          "Asymmetry": 0.22,
+          "Assignment": "O-H deformation"
+        }
+      ]
+    }
+  ],
+  "Alcohols": [
+    {
+      "Name": "Methanol",
+      "Peaks": [
+        {
+          "Wavenumber": 2830,
+          "Intensity": "S",
+          "Num_Intensity": 4,
+          "Shape": "Gaussian",
+          "FWHM": 15,
+          "Asymmetry": 0.05,
+          "Assignment": "C–H symmetric stretch"
+        },
+        {
+          "Wavenumber": 1030,
+          "Intensity": "S",
+          "Num_Intensity": 4,
+          "Shape": "Gaussian",
+          "FWHM": 18,
+          "Asymmetry": 0.08,
+          "Assignment": "C–O stretch"
+        },
+        {
+          "Wavenumber": 1450,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Lorentz",
+          "FWHM": 25,
+          "Asymmetry": 0.15,
+          "Assignment": "CH₃ bend"
+        },
+        {
+          "Wavenumber": 3300,
+          "Intensity": "W",
+          "Num_Intensity": 1,
+          "Shape": "Lorentz",
+          "FWHM": 50,
+          "Asymmetry": 0.3,
+          "Assignment": "O–H stretch"
+        }
+      ]
+    },
+    {
+      "Name": "Ethanol",
+      "Peaks": [
+        {
+          "Wavenumber": 880,
+          "Intensity": "MS",
+          "Num_Intensity": 3,
+          "Shape": "Gaussian",
+          "FWHM": 20,
+          "Asymmetry": 0.1,
+          "Assignment": "C–C–O bend"
+        },
+        {
+          "Wavenumber": 1050,
+          "Intensity": "S",
+          "Num_Intensity": 4,
+          "Shape": "Gaussian",
+          "FWHM": 16,
+          "Asymmetry": 0.06,
+          "Assignment": "C–O stretch"
+        },
+        {
+          "Wavenumber": 2900,
+          "Intensity": "S",
+          "Num_Intensity": 4,
+          "Shape": "Gaussian",
+          "FWHM": 14,
+          "Asymmetry": 0.04,
+          "Assignment": "C–H stretch"
+        },
+        {
+          "Wavenumber": 1450,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Lorentz",
+          "FWHM": 28,
+          "Asymmetry": 0.18,
+          "Assignment": "CH₂ bend"
+        },
+        {
+          "Wavenumber": 3300,
+          "Intensity": "W",
+          "Num_Intensity": 1,
+          "Shape": "Lorentz",
+          "FWHM": 55,
+          "Asymmetry": 0.35,
+          "Assignment": "O–H stretch"
+        }
+      ]
+    }
+  ],
+  "Organic_Acids": [
+    {
+      "Name": "Formic Acid",
+      "Peaks": [
+        {
+          "Wavenumber": 2960,
+          "Intensity": "S",
+          "Num_Intensity": 4,
+          "Shape": "Gaussian",
+          "FWHM": 16,
+          "Asymmetry": 0.06,
+          "Assignment": "C–H stretch"
+        },
+        {
+          "Wavenumber": 1665,
+          "Intensity": "VS",
+          "Num_Intensity": 5,
+          "Shape": "Gaussian",
+          "FWHM": 12,
+          "Asymmetry": 0.02,
+          "Assignment": "C=O stretch"
+        },
+        {
+          "Wavenumber": 1400,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Lorentz",
+          "FWHM": 30,
+          "Asymmetry": 0.2,
+          "Assignment": "C–H bend"
+        },
+        {
+          "Wavenumber": 1200,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Lorentz",
+          "FWHM": 32,
+          "Asymmetry": 0.22,
+          "Assignment": "C–O stretch"
+        },
+        {
+          "Wavenumber": 1060,
+          "Intensity": "W",
+          "Num_Intensity": 1,
+          "Shape": "Lorentz",
+          "FWHM": 40,
+          "Asymmetry": 0.28,
+          "Assignment": "C–H twist"
+        },
+        {
+          "Wavenumber": 680,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Lorentz",
+          "FWHM": 35,
+          "Asymmetry": 0.25,
+          "Assignment": "OCO bend"
+        }
+      ]
+    },
+    {
+      "Name": "Acetic Acid",
+      "Peaks": [
+        {
+          "Wavenumber": 2960,
+          "Intensity": "S",
+          "Num_Intensity": 4,
+          "Shape": "Gaussian",
+          "FWHM": 15,
+          "Asymmetry": 0.05,
+          "Assignment": "C–H stretch"
+        },
+        {
+          "Wavenumber": 1665,
+          "Intensity": "S",
+          "Num_Intensity": 4,
+          "Shape": "Gaussian",
+          "FWHM": 14,
+          "Asymmetry": 0.04,
+          "Assignment": "C=O stretch"
+        },
+        {
+          "Wavenumber": 1400,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Lorentz",
+          "FWHM": 28,
+          "Asymmetry": 0.18,
+          "Assignment": "CH₃ bend"
+        },
+        {
+          "Wavenumber": 1200,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Lorentz",
+          "FWHM": 30,
+          "Asymmetry": 0.2,
+          "Assignment": "C–O stretch"
+        },
+        {
+          "Wavenumber": 1060,
+          "Intensity": "W",
+          "Num_Intensity": 1,
+          "Shape": "Lorentz",
+          "FWHM": 38,
+          "Asymmetry": 0.26,
+          "Assignment": "C–H twist"
+        },
+        {
+          "Wavenumber": 680,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Lorentz",
+          "FWHM": 32,
+          "Asymmetry": 0.22,
+          "Assignment": "OCO bend"
+        },
+        {
+          "Wavenumber": 618,
+          "Intensity": "W+",
+          "Num_Intensity": 1,
+          "Shape": "Gaussian",
+          "FWHM": 10,
+          "Asymmetry": 0.3,
+          "Assignment": "Skeletal deformation"
+        }
+      ]
+    },
+    {
+      "Name": "Oxalic Acid",
+      "Peaks": [
+        {
+          "Wavenumber": 1700,
+          "Intensity": "S",
+          "Num_Intensity": 4,
+          "Shape": "Gaussian",
+          "FWHM": 15,
+          "Asymmetry": 0.05,
+          "Assignment": "C=O stretch"
+        },
+        {
+          "Wavenumber": 1460,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Lorentz",
+          "FWHM": 35,
+          "Asymmetry": 0.25,
+          "Assignment": "O–H bend"
+        },
+        {
+          "Wavenumber": 890,
+          "Intensity": "MS",
+          "Num_Intensity": 3,
+          "Shape": "Gaussian",
+          "FWHM": 18,
+          "Asymmetry": 0.1,
+          "Assignment": "O–C=O bend"
+        },
+        {
+          "Wavenumber": 540,
+          "Intensity": "W",
+          "Num_Intensity": 1,
+          "Shape": "Lorentz",
+          "FWHM": 45,
+          "Asymmetry": 0.35,
+          "Assignment": "O–C–O deformation"
+        }
+      ]
+    },
+    {
+      "Name": "Citric Acid",
+      "Peaks": [
+        {
+          "Wavenumber": 1740,
+          "Intensity": "S",
+          "Num_Intensity": 4,
+          "Shape": "Gaussian",
+          "FWHM": 14,
+          "Asymmetry": 0.04,
+          "Assignment": "C=O stretch"
+        },
+        {
+          "Wavenumber": 1450,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Lorentz",
+          "FWHM": 30,
+          "Asymmetry": 0.2,
+          "Assignment": "CH₂ bend"
+        },
+        {
+          "Wavenumber": 1300,
+          "Intensity": "M",
+          "Num_Intensity": 2,
+          "Shape": "Lorentz",
+          "FWHM": 32,
+          "Asymmetry": 0.22,
+          "Assignment": "C–O–H bend"
+        },
+        {
+          "Wavenumber": 950,
+          "Intensity": "MS",
+          "Num_Intensity": 3,
+          "Shape": "Gaussian",
+          "FWHM": 20,
+          "Asymmetry": 0.12,
+          "Assignment": "C–C stretch"
+        },
+        {
+          "Wavenumber": 850,
+          "Intensity": "W",
+          "Num_Intensity": 1,
+          "Shape": "Lorentz",
+          "FWHM": 40,
+          "Asymmetry": 0.28,
+          "Assignment": "C–C–O bend"
+        }
+      ]
+    }
+  ]
+}
