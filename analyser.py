@@ -167,7 +167,7 @@ class RamanAnalyzer:
         """Loads Raman spectral databases from JSON files or URLs."""
         db = {}
         if not paths:
-        st.warning("No database paths provided. Database matching will be empty.")
+            st.warning("No database paths provided. Database matching will be empty.")
         return db
 
         for path in paths:
