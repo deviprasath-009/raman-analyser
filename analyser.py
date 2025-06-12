@@ -11,7 +11,7 @@ import streamlit as st
 import json
 import joblib
 import os
-from urllib.parse import urlparse
+from urllib.parse import urlparse # Imported but not used in the final provided code
 import requests
 from typing import List, Dict, Any
 
@@ -19,17 +19,12 @@ from typing import List, Dict, Any
 import google.generativeai as genai
 
 # --- SET PAGE CONFIG FIRST ---
-st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded")
+# This line MUST be the very first Streamlit command in your script.
+st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded", icon="🔬")
 
-# --- Configuration for Google Gemini API ---
-GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY"))
+# --- Configuration for Google Gemini API and Model (handled within get_analyzer_instance) ---
+# The previous global API key setup is REMOVED from here to prevent early initialization errors.
 
-if not GEMINI_API_KEY:
-    st.error("GEMINI_API_KEY not found. Please set it in Streamlit secrets or as an environment variable.")
-    st.stop()
-
-genai.configure(api_key=GEMINI_API_KEY)
-GEMINI_MODEL_NAME = "gemini-2.0-flash"
 
 # ------------------------ Utility Functions ------------------------
 def despike_spectrum(intensities: np.ndarray) -> np.ndarray:
@@ -95,7 +90,7 @@ class ExpertInterpreter:
         """Identifies more complex spectral features or issues."""
         if any(p < 500 for p in self.peaks):
             self.diagnostics.append("⚠️ Peaks below 500 cm⁻¹ often suggest the presence of minerals or inorganic compounds.")
-        
+            
         peak_list = sorted(self.peaks)
         for i in range(len(peak_list) - 1):
             if abs(peak_list[i] - peak_list[i+1]) < 15:
@@ -142,7 +137,8 @@ class MolecularIdentifier:
 # ------------------------ Analyzer Core ------------------------
 class RamanAnalyzer:
     """Core class for performing Raman spectrum analysis, including ML and AI generation."""
-    def __init__(self, json_paths: List[str] = None, model_path: str = None):
+    # Modified __init__ to accept gemini_model_name
+    def __init__(self, json_paths: List[str] = None, model_path: str = None, gemini_model_name: str = "gemini-pro"):
         self.model = Pipeline([('scaler', StandardScaler()), ('mlp', MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=1000, random_state=42))])
         if model_path and os.path.exists(model_path):
             try:
@@ -154,13 +150,15 @@ class RamanAnalyzer:
             st.info("No pre-trained ML model found or path invalid. A new (untrained) model will be used.")
 
         self.identifier = MolecularIdentifier()
-        self.database = self._load_databases(json_paths) 
+        self.database = self._load_databases(json_paths)  
         
+        # Initialize Google Generative AI model using the passed model name
         try:
-            self.ai_generator_model = genai.GenerativeModel(GEMINI_MODEL_NAME)
-            st.success(f"AI text generation model '{GEMINI_MODEL_NAME}' loaded!")
+            self.ai_generator_model = genai.GenerativeModel(gemini_model_name)
+            # No st.success here, as configuration success is handled in get_analyzer_instance
         except Exception as e:
-            st.error(f"Could not load Google Gemini model: {e}. AI summary generation will not work.")
+            # Error handling is primarily in get_analyzer_instance.
+            # This 'except' block just ensures self.ai_generator_model is None if it fails.
             self.ai_generator_model = None
 
     def _load_databases(self, paths: List[str]) -> Dict:
@@ -168,54 +166,54 @@ class RamanAnalyzer:
         db = {}
         if not paths:
             st.warning("No database paths provided. Database matching will be empty.")
-        return db
+            return db
 
         for path in paths:
-        try:
-            # Load from URL or local file
-            if path.startswith(('http://', 'https://')):
-                response = requests.get(path)
-                response.raise_for_status()
-                data = response.json()
-                st.success(f"✅ Loaded database from URL: {path}")
-            else:
-                # Resolve relative local path
-                if not os.path.isabs(path):
-                    script_dir = os.path.dirname(os.path.abspath(__file__))
-                    full_path = os.path.join(script_dir, path)
+            try:
+                # Load from URL or local file
+                if path.startswith(('http://', 'https://')):
+                    response = requests.get(path)
+                    response.raise_for_status()
+                    data = response.json()
+                    st.success(f"✅ Loaded database from URL: {path}")
                 else:
-                    full_path = path
-
-                if os.path.exists(full_path):
-                    with open(full_path, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                    st.success(f"✅ Loaded database from file: {os.path.basename(path)}")
-                else:
-                    st.warning(f"⚠️ Database file not found at: {full_path}")
-                    continue
-
-            # Flexible structure handling
-            if isinstance(data, dict):
-                for category, compounds in data.items():
-                    if isinstance(compounds, list):
-                        db.setdefault(category, []).extend(compounds)
+                    # Resolve relative local path
+                    if not os.path.isabs(path):
+                        script_dir = os.path.dirname(os.path.abspath(__file__))
+                        full_path = os.path.join(script_dir, path)
                     else:
-                        st.warning(f"⚠️ Category '{category}' is not a list, skipping.")
-            elif isinstance(data, list):
-                db.setdefault("Uncategorized", []).extend(data)
-                st.warning("⚠️ JSON file is a list. Wrapped under 'Uncategorized'.")
-            else:
-                st.error(f"❌ Unsupported JSON structure in {path}. Skipped.")
+                        full_path = path
 
-        except json.JSONDecodeError as e:
-            st.error(f"❌ JSON parsing error in {path}: {e}")
-        except requests.exceptions.RequestException as e:
-            st.error(f"❌ Request error loading from {path}: {e}")
-        except Exception as e:
-            st.error(f"❌ Unexpected error loading {path}: {e}")
+                    if os.path.exists(full_path):
+                        with open(full_path, 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                        st.success(f"✅ Loaded database from file: {os.path.basename(path)}")
+                    else:
+                        st.warning(f"⚠️ Database file not found at: {full_path}")
+                        continue
 
-    return db
-   
+                # Flexible structure handling
+                if isinstance(data, dict):
+                    for category, compounds in data.items():
+                        if isinstance(compounds, list):
+                            db.setdefault(category, []).extend(compounds)
+                        else:
+                            st.warning(f"⚠️ Category '{category}' is not a list, skipping.")
+                elif isinstance(data, list):
+                    db.setdefault("Uncategorized", []).extend(data)
+                    st.warning("⚠️ JSON file is a list. Wrapped under 'Uncategorized'.")
+                else:
+                    st.error(f"❌ Unsupported JSON structure in {path}. Skipped.")
+
+            except json.JSONDecodeError as e:
+                st.error(f"❌ JSON parsing error in {path}: {e}")
+            except requests.exceptions.RequestException as e:
+                st.error(f"❌ Request error loading from {path}: {e}")
+            except Exception as e:
+                st.error(f"❌ Unexpected error loading {path}: {e}")
+
+        return db
+
     def analyze(self, wavenumbers: np.ndarray, intensities: np.ndarray, metadata: Dict) -> Dict:
         """Performs the full Raman analysis workflow."""
         intensities_despiked = despike_spectrum(intensities)
@@ -267,7 +265,7 @@ class RamanAnalyzer:
         peak_indices = peak_indices[(peak_indices >= 0) & (peak_indices < len(wavenumbers))]
         
         ax.scatter(peaks, intensities[peak_indices],
-                   color='red', s=50, zorder=5, label='Detected Peaks', edgecolor='k', alpha=0.8)
+                    color='red', s=50, zorder=5, label='Detected Peaks', edgecolor='k', alpha=0.8)
 
         ax.set_title("Raman Spectrum", fontsize=16, pad=15)
         ax.set_xlabel("Raman Shift (cm⁻¹)", fontsize=12)
@@ -286,8 +284,33 @@ class RamanAnalyzer:
 # Instantiate Analyzer Core once using st.cache_resource
 @st.cache_resource
 def get_analyzer_instance(json_db_paths: List[str], ml_model_path: str = None) -> RamanAnalyzer:
-    """Initializes and caches the RamanAnalyzer instance."""
-    return RamanAnalyzer(json_db_paths, ml_model_path)
+    """
+    Initializes and caches the RamanAnalyzer instance.
+    Handles API key retrieval and Gemini configuration here.
+    """
+    # --- API Key retrieval and Gemini configuration moved HERE ---
+    # For Streamlit Cloud, st.secrets.get is the primary method.
+    gemini_api_key = st.secrets.get("GEMINI_API_KEY") 
+    
+    if not gemini_api_key:
+        st.error("GEMINI_API_KEY not found. Please set it in Streamlit secrets.")
+        st.stop() # This will stop the app if the key is not found
+
+    try:
+        genai.configure(api_key=gemini_api_key)
+        st.success("Google Gemini API configured successfully for the analyzer.")
+    except Exception as e:
+        st.error(f"Error configuring Google Gemini API: {e}. AI summary generation will not work.")
+        # Optionally, you might want to stop the app here too, or just disable AI features.
+        # st.stop()
+
+    # Define the model name after API key configuration
+    # Set this to "gemini-2.0-flash" as that worked with curl
+    gemini_model_name_for_analyzer = "gemini-2.0-flash" 
+
+    # Now, initialize RamanAnalyzer, passing the configured model name
+    return RamanAnalyzer(json_db_paths, ml_model_path, gemini_model_name=gemini_model_name_for_analyzer)
+
 
 # --- PubChem API Integration ---
 @st.cache_data(show_spinner="Fetching data from PubChem...")
@@ -366,15 +389,16 @@ def main():
     # Database configuration - use GitHub URL
     GITHUB_DB_URL = "https://raw.githubusercontent.com/deviprasath-009/raman-analyser/refs/heads/main/data/up.json"
     
-    # Local fallback path (if needed)
-    LOCAL_DB_PATH = os.path.join(script_directory, "raman_database.json")
+    # Local fallback path (if needed) - ensure this path is correct if used locally
+    # LOCAL_DB_PATH = os.path.join(script_directory, "raman_database.json")
     
     # Model path
     ML_MODEL_PATH = os.path.join(script_directory, "raman_mlp_model.joblib")
     
-    # Use GitHub URL as primary, local as fallback
+    # Use GitHub URL as primary for the database
     DB_JSON_PATHS = [GITHUB_DB_URL]
     
+    # Initialize the analyzer instance, which now handles API key setup
     analyzer = get_analyzer_instance(DB_JSON_PATHS, ML_MODEL_PATH)
 
     st.sidebar.header("📂 Data & Sample Information")
@@ -501,7 +525,7 @@ def main():
                     top_match = results["compound_suggestions"][0]
                     st.markdown("#### 🧠 AI-Generated Summary for Top Match")
                     if analyzer.ai_generator_model:
-                        with st.spinner(f"Generating AI summary for {top_match['Compound']} using {GEMINI_MODEL_NAME}..."):
+                        with st.spinner(f"Generating AI summary for {top_match['Compound']} using gemini-2.0-flash..."): # Hardcoded model name for display
                             ai_summary = analyzer.generate_summary(top_match['Compound'], top_match['Group'])
                         st.markdown(ai_summary)
                     else:
