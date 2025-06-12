@@ -215,7 +215,6 @@ class RamanAnalyzer:
             st.error(f"❌ Unexpected error loading {path}: {e}")
 
     return db
-
     for path in paths:
         try:
             # Load from URL or local file
