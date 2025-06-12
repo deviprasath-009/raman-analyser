@@ -110,9 +110,9 @@ class MolecularIdentifier:
         self.tolerance = tolerance
         self.min_matches = min_matches
     def identify(self, peaks: List[float], database: Dict) -> List[Dict]:
-    """
-    Matches observed peaks against a reference database of compounds.
-    """
+        """
+        Matches observed peaks against a reference database of compounds.
+        """
     matches = []
 
     if not isinstance(database, dict):
