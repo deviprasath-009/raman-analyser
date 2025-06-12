@@ -109,40 +109,37 @@ class MolecularIdentifier:
     def __init__(self, tolerance: float = 50, min_matches: int = 1):
         self.tolerance = tolerance
         self.min_matches = min_matches
-
     def identify(self, peaks: List[float], database: Dict) -> List[Dict]:
-        """
-        Matches observed peaks against a database of reference compounds.
-        
-        Args:
-            peaks: List of observed peak wavenumbers
-            database: Dictionary containing reference compounds and their peaks
-            
-        Returns:
-            List of dictionaries containing match information
-        """
-        matches = []
-        if not database:
-            return matches
-            
-        for category, compounds in database.items():
-            for compound in compounds:
-                matched_count = 0
-                for ref_peak_data in compound.get("Peaks", []):
-                    ref_wavenumber = ref_peak_data.get("Wavenumber")
-                    if ref_wavenumber is not None:
-                        for obs_peak in peaks:
-                            if abs(obs_peak - ref_wavenumber) <= self.tolerance:
-                                matched_count += 1
-                                break
-                
-                if matched_count >= self.min_matches:
-                    matches.append({
-                        "Compound": compound.get("Name", "Unknown"),
-                        "Group": category,
-                        "Matched Peaks Count": matched_count
-                    })
-        return sorted(matches, key=lambda x: x["Matched Peaks Count"], reverse=True)
+    """
+    Matches observed peaks against a reference database of compounds.
+    """
+    matches = []
+
+    if not isinstance(database, dict):
+        st.error("❌ Database format error: Expected a dictionary of categories.")
+        return matches
+
+    for category, compounds in database.items():
+        if not isinstance(compounds, list):
+            continue  # skip malformed categories
+        for compound in compounds:
+            matched_count = 0
+            for ref_peak in compound.get("Peaks", []):
+                ref_wavenumber = ref_peak.get("Wavenumber")
+                if ref_wavenumber is not None:
+                    for obs_peak in peaks:
+                        if abs(obs_peak - ref_wavenumber) <= self.tolerance:
+                            matched_count += 1
+                            break
+            if matched_count >= self.min_matches:
+                matches.append({
+                    "Compound": compound.get("Name", "Unknown"),
+                    "Group": category,
+                    "Matched Peaks Count": matched_count
+                })
+
+    return sorted(matches, key=lambda x: x["Matched Peaks Count"], reverse=True)
+
 
 
 # ------------------------ Analyzer Core ------------------------
