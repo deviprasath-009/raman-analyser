@@ -20,7 +20,7 @@ import google.generativeai as genai
 
 # --- SET PAGE CONFIG FIRST ---
 # This line MUST be the very first Streamlit command in your script.
-st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded", icon="🔬")
+st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded")
 
 # --- Configuration for Google Gemini API and Model (handled within get_analyzer_instance) ---
 # The previous global API key setup is REMOVED from here to prevent early initialization errors.
