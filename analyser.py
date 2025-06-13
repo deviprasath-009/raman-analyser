@@ -19,7 +19,7 @@ import google.generativeai as genai
 
 # --- SET PAGE CONFIG FIRST ---
 # This line MUST be the very first Streamlit command in your script.
-st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded")
+set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded")
 
 # --- Configuration for Google Gemini API and Model ---
 # API key retrieval and genai.configure are now handled within get_analyzer_instance
@@ -122,7 +122,7 @@ class MolecularIdentifier:
         matches = []
 
         if not isinstance(database, dict):
-            #st.error("❌ Database format error: Expected a dictionary of categories.")
+            st.error("❌ Database format error: Expected a dictionary of categories.")
             return matches
 
         for category, compounds in database.items():
@@ -160,11 +160,11 @@ class RamanAnalyzer:
         if model_path and os.path.exists(model_path):
             try:
                 self.model = joblib.load(model_path)
-                #st.info(f"ML model loaded successfully from '{os.path.basename(model_path)}'.")
+                st.info(f"ML model loaded successfully from '{os.path.basename(model_path)}'.")
             except Exception as e:
-                #st.warning(f"Could not load ML model from '{os.path.basename(model_path)}': {e}. A new (untrained) model will be used.")
+                st.warning(f"Could not load ML model from '{os.path.basename(model_path)}': {e}. A new (untrained) model will be used.")
         else:
-            #st.info("No pre-trained ML model found or path invalid. A new (untrained) model will be used.")
+            st.info("No pre-trained ML model found or path invalid. A new (untrained) model will be used.")
 
         self.identifier = MolecularIdentifier()
         self.database = self._load_json_data(json_paths, is_compound_db=True) # Load compound database
