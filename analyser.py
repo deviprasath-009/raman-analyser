@@ -656,7 +656,7 @@ def main():
     # This path is for additional Raman shifts data provided to the AI for richer context
     LOCAL_AI_RAMAN_SHIFTS_DB_PATH = os.path.join(script_directory, "data/raw_raman_shiifts.json") 
 
-    ML_MODEL_PATH = os.path.join(script_directory, "raman_mlp_model.joblib")
+    ML_MODEL_PATH = os.path.join(script_directory, "raman_analyzer_model (1).joblib")
     
     # List of paths for the compound database
     COMPOUND_DB_PATHS = [GITHUB_COMPOUND_DB_URL, LOCAL_COMPOUND_DB_PATH]
