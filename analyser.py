@@ -200,7 +200,7 @@ class RamanAnalyzer:
                     response = requests.get(path)
                     response.raise_for_status()
                     data = response.json()
-                    st.success(f"✅ Loaded {'compound' if is_compound_db else 'functional group'} data from URL: {path}")
+                    #st.success(f"✅ Loaded {'compound' if is_compound_db else 'functional group'} data from URL: {path}")
                 else:
                     if not os.path.isabs(path):
                         script_dir = os.path.dirname(os.path.abspath(__file__))
