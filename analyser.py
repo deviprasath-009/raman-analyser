@@ -19,7 +19,7 @@ import google.generativeai as genai
 
 # --- SET PAGE CONFIG FIRST ---
 # This line MUST be the very first Streamlit command in your script.
-st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded", icon="🔬")
 
 # --- Configuration for Google Gemini API and Model ---
 # API key retrieval and genai.configure are now handled within get_analyzer_instance
@@ -40,17 +40,19 @@ def detect_peaks(wavenumbers: np.ndarray, intensities: np.ndarray) -> np.ndarray
 # ------------------------ Expert Interpreter ------------------------
 class ExpertInterpreter:
     """Interprets Raman spectrum features based on predefined expert rules."""
-    def __init__(self, peaks: List[float], intensities: List[float], metadata: Dict):
+    # Modified __init__ to accept functional_group_rules
+    def __init__(self, peaks: List[float], intensities: List[float], metadata: Dict, functional_group_rules: List[Dict]):
         self.peaks = peaks
         self.intensities = intensities
         self.metadata = metadata
         self.functional_groups = []
         self.diagnostics = []
+        self.functional_group_rules = functional_group_rules # Store the loaded rules
 
     def interpret(self):
         """Runs the expert interpretation logic."""
         self._check_conditions()
-        self._assign_groups()
+        self._assign_groups() # This will now use the external rules
         self._handle_complexities()
         return {
             "diagnostics": self.diagnostics,
@@ -69,23 +71,33 @@ class ExpertInterpreter:
             self.diagnostics.append("💧 Liquid samples may show broad solvent peaks.")
 
     def _assign_groups(self):
-        """Assigns common functional groups based on peak positions."""
-        # Note: Peak ranges and assignments are simplified for demonstration
+        """Assigns common functional groups based on peak positions using external rules."""
         for peak in self.peaks:
-            if 1600 <= peak <= 1800:
-                self.functional_groups.append(("C=O Stretch", peak))
-            elif 780 <= peak <= 800:
-                self.functional_groups.append(("Phosphate Stretch", peak))
-            elif 1000 <= peak <= 1030:
-                self.functional_groups.append(("Aromatic Ring C-C Stretch", peak))
-            elif 2800 <= peak <= 3000:
-                self.functional_groups.append(("C-H Stretch", peak))
-            elif 1086 - 5 <= peak <= 1086 + 5:
-                self.functional_groups.append(("Carbonate Stretch (CO3^2-)", peak))
-            elif 250 <= peak <= 500:
-                self.functional_groups.append(("Mineral/Inorganic Signature", peak))
-            elif 3200 <= peak <= 3600:
-                self.functional_groups.append(("O-H Stretch (Water/Hydroxyl)", peak))
+            for rule in self.functional_group_rules:
+                # The functional group rules are in a list of dictionaries.
+                # Each dictionary has "wavenumber_range_cm-1", "vibrational_mode", "compound_functionality".
+                # We need to parse the range string.
+                wavenumber_range_str = rule.get("wavenumber_range_cm-1")
+                if wavenumber_range_str:
+                    try:
+                        # Split the range string by '–' (en dash) or '-' (hyphen)
+                        if '–' in wavenumber_range_range_str:
+                            start_str, end_str = wavenumber_range_str.split('–')
+                        elif '-' in wavenumber_range_str:
+                            start_str, end_str = wavenumber_range_str.split('-')
+                        else: # Handle single peak values or specific points if needed
+                            start_str = end_str = wavenumber_range_str
+
+                        range_start = float(start_str.strip())
+                        range_end = float(end_str.strip())
+
+                        if range_start <= peak <= range_end:
+                            self.functional_groups.append((f"{rule['vibrational_mode']} ({rule['compound_functionality']})", peak))
+                            break # Move to next observed peak
+                    except ValueError:
+                        # Handle cases where range parsing fails (e.g., malformed strings)
+                        # Optionally log a warning or error, but for simplicity, we'll just skip
+                        pass
 
     def _handle_complexities(self):
         """Identifies more complex spectral features or issues."""
@@ -138,8 +150,12 @@ class MolecularIdentifier:
 # ------------------------ Analyzer Core ------------------------
 class RamanAnalyzer:
     """Core class for performing Raman spectrum analysis, including ML and AI generation."""
-    # Modified __init__ to accept gemini_model_name
-    def __init__(self, json_paths: List[str] = None, model_path: str = None, gemini_model_name: str = "gemini-pro"):
+    # Modified __init__ to accept both functional_group_database and ai_raw_raman_shifts_data
+    def __init__(self, json_paths: List[str] = None, model_path: str = None, 
+                 gemini_model_name: str = "gemini-pro", 
+                 functional_group_database: List[Dict] = None, # For ExpertInterpreter
+                 ai_raw_raman_shifts_data: List[Dict] = None): # For AI prompt
+        
         self.model = Pipeline([('scaler', StandardScaler()), ('mlp', MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=1000, random_state=42))])
         if model_path and os.path.exists(model_path):
             try:
@@ -151,7 +167,9 @@ class RamanAnalyzer:
             st.info("No pre-trained ML model found or path invalid. A new (untrained) model will be used.")
 
         self.identifier = MolecularIdentifier()
-        self.database = self._load_databases(json_paths)  
+        self.database = self._load_json_data(json_paths, is_compound_db=True) # Load compound database
+        self.functional_group_database = functional_group_database if functional_group_database is not None else [] # Store functional group rules for ExpertInterpreter
+        self.ai_raw_raman_shifts_data = ai_raw_raman_shifts_data if ai_raw_raman_shifts_data is not None else [] # Store raw Raman shifts for AI prompt
         
         # Initialize Google Generative AI model using the passed model name
         try:
@@ -159,23 +177,31 @@ class RamanAnalyzer:
         except Exception as e:
             self.ai_generator_model = None # Set to None if model loading fails
 
-    def _load_databases(self, paths: List[str]) -> Dict:
-        """Loads Raman spectral databases from JSON files or URLs."""
-        db = {}
+    def _load_json_data(self, paths: List[str], is_compound_db: bool = False) -> Any:
+        """
+        Loads JSON data from a list of paths (URL or local file).
+        Can be used for compound database (dict) or functional group rules (list).
+        """
+        if is_compound_db:
+            db = {} # Compound database is a dict
+        else:
+            db = [] # Functional group rules is a list
+
         if not paths:
-            st.warning("No database paths provided. Database matching will be empty.")
+            st.warning(f"No database paths provided for {'compound' if is_compound_db else 'functional group'} data. It will be empty.")
             return db
 
         for path in paths:
             try:
-                # Load from URL or local file
+                if path is None: # Skip None paths
+                    continue
+
                 if path.startswith(('http://', 'https://')):
                     response = requests.get(path)
-                    response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+                    response.raise_for_status()
                     data = response.json()
-                    st.success(f"✅ Loaded database from URL: {path}")
+                    st.success(f"✅ Loaded {'compound' if is_compound_db else 'functional group'} data from URL: {path}")
                 else:
-                    # Resolve relative local path
                     if not os.path.isabs(path):
                         script_dir = os.path.dirname(os.path.abspath(__file__))
                         full_path = os.path.join(script_dir, path)
@@ -185,31 +211,36 @@ class RamanAnalyzer:
                     if os.path.exists(full_path):
                         with open(full_path, 'r', encoding='utf-8') as f: # Use utf-8 encoding
                             data = json.load(f)
-                        st.success(f"✅ Loaded database from file: {os.path.basename(path)}")
+                        st.success(f"✅ Loaded {'compound' if is_compound_db else 'functional group'} data from file: {os.path.basename(path)}")
                     else:
-                        st.warning(f"⚠️ Database file not found at: {full_path}")
+                        st.warning(f"⚠️ {'Compound' if is_compound_db else 'Functional group'} file not found at: {full_path}")
                         continue
 
-                # Flexible structure handling: If the JSON is a list (like "raman data 1 .json"),
-                # it's wrapped under an "Uncategorized" key.
-                if isinstance(data, dict):
-                    for category, compounds in data.items():
-                        if isinstance(compounds, list):
-                            db.setdefault(category, []).extend(compounds)
-                        else:
-                            st.warning(f"⚠️ Category '{category}' in {path} is not a list, skipping.")
-                elif isinstance(data, list):
-                    db.setdefault("Uncategorized", []).extend(data)
-                    st.warning(f"⚠️ JSON file {os.path.basename(path)} is a list. Wrapped under 'Uncategorized'.")
-                else:
-                    st.error(f"❌ Unsupported JSON structure in {path}. Skipped.")
+                # Handle different JSON structures based on expected type
+                if is_compound_db:
+                    if isinstance(data, dict):
+                        for category, compounds in data.items():
+                            if isinstance(compounds, list):
+                                db.setdefault(category, []).extend(compounds)
+                            else:
+                                st.warning(f"⚠️ Category '{category}' in {path} is not a list, skipping.")
+                    elif isinstance(data, list):
+                        db.setdefault("Uncategorized", []).extend(data)
+                        st.warning(f"⚠️ JSON file {os.path.basename(path)} is a list. Wrapped under 'Uncategorized'.")
+                    else:
+                        st.error(f"❌ Unsupported JSON structure in {path} for compound database. Skipped.")
+                else: # For functional group rules (expected to be a list)
+                    if isinstance(data, list):
+                        db.extend(data)
+                    else:
+                        st.error(f"❌ Functional group data in {path} is not a list. Skipped.")
 
             except json.JSONDecodeError as e:
-                st.error(f"❌ JSON parsing error in {path}: {e}")
+                st.error(f"❌ JSON parsing error in {path} for {'compound' if is_compound_db else 'functional group'} data: {e}")
             except requests.exceptions.RequestException as e:
-                st.error(f"❌ Request error loading from {path}: {e}")
+                st.error(f"❌ Request error loading from {path} for {'compound' if is_compound_db else 'functional group'} data: {e}")
             except Exception as e:
-                st.error(f"❌ Unexpected error loading {path}: {e}")
+                st.error(f"❌ Unexpected error loading {path} for {'compound' if is_compound_db else 'functional group'} data: {e}")
 
         return db
 
@@ -218,7 +249,8 @@ class RamanAnalyzer:
         intensities_despiked = despike_spectrum(intensities)
         peaks, peak_intensities = detect_peaks(wavenumbers, intensities_despiked)
 
-        interpreter = ExpertInterpreter(peaks.tolist(), peak_intensities.tolist(), metadata)
+        # Pass the functional_group_database (for expert rules) to ExpertInterpreter
+        interpreter = ExpertInterpreter(peaks.tolist(), peak_intensities.tolist(), metadata, self.functional_group_database)
         interpretation = interpreter.interpret()
 
         suggestions = self.identifier.identify(peaks.tolist(), self.database)
@@ -245,7 +277,7 @@ class RamanAnalyzer:
             
             # Basic cleaning
             clean_summary = summary.replace(prompt, "").strip()
-            # Truncate if too long and ends with a sentence, or just truncate and add ellipsis
+            # Truncate if too long and ends with a sentence, or just truncate and with ellipsis
             if len(clean_summary) > 150 and '.' in clean_summary[:150]:
                 clean_summary = clean_summary.rsplit('.', 1)[0] + '.'
             elif len(clean_summary) > 150:
@@ -255,7 +287,104 @@ class RamanAnalyzer:
         except Exception as e:
             return f"AI summary generation failed: {e}. Please check your API key, model access, and prompt."
 
-    # Modified visualize to handle multiple spectra for overlay or stacked plots
+    def predict_compounds_with_ai(self, peaks: List[float], functional_groups: List[Tuple[str, float]], diagnostics: List[str], metadata: Dict) -> List[Dict]:
+        """
+        Predicts plausible compounds using the AI model based on detected peaks,
+        functional groups, diagnostics, metadata, and the raw Raman shifts data.
+        Requests a structured JSON response from the AI.
+        """
+        if not self.ai_generator_model:
+            st.warning("AI model not available for compound prediction.")
+            return []
+
+        # Construct a detailed prompt for the AI
+        prompt_parts = [
+            "Based on the following Raman spectral analysis:",
+            f"Detected Peak Positions (cm⁻¹): {sorted(peaks)}",
+            "Identified Functional Groups (and their approximate peak positions):"
+        ]
+        if functional_groups:
+            for fg, p in functional_groups:
+                prompt_parts.append(f"- {fg} (at {p:.1f} cm⁻¹)")
+        else:
+            prompt_parts.append("- None explicitly identified by expert rules.")
+
+        if diagnostics:
+            prompt_parts.append("Diagnostics/Observations:")
+            for diag in diagnostics:
+                prompt_parts.append(f"- {diag}")
+        
+        # Add metadata for context, but keep it concise for the AI
+        prompt_parts.append(f"Sample State: {metadata.get('sample_state')}, Crystalline: {metadata.get('crystalline')}, Excitation: {metadata.get('excitation')}.")
+        
+        # NEW: Inject the content of raw_raman_shifts_data into the prompt for AI's context
+        if self.ai_raw_raman_shifts_data:
+            prompt_parts.append("\nHere is additional raw Raman shift data (wavenumber range, vibrational mode, compound functionality) that can be considered for more nuanced predictions:")
+            for entry in self.ai_raw_raman_shifts_data:
+                range_str = entry.get("wavenumber_range_cm-1", "N/A")
+                mode = entry.get("vibrational_mode", "N/A")
+                functionality = entry.get("compound_functionality", "N/A")
+                prompt_parts.append(f"- Range: {range_str}, Mode: {mode}, Functionality: {functionality}")
+        
+        prompt_parts.append("\nConsidering these features, identify the most plausible chemical compounds that could be present in this sample. For each compound, provide a concise explanation of why it is suggested, linking it to the provided peaks and functional groups. Focus on compounds strongly indicated by the data.")
+        prompt_parts.append("Return your response as a JSON array of objects. Each object MUST have two keys: 'Compound' (string, the name of the chemical compound) and 'Reasoning' (string, a brief explanation). Do not include any introductory or concluding text outside the JSON array.")
+
+        full_prompt = "\n".join(prompt_parts)
+
+        # Define the expected JSON schema for the AI response
+        response_schema = {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "Compound": {"type": "STRING"},
+                    "Reasoning": {"type": "STRING"}
+                },
+                "required": ["Compound", "Reasoning"]
+            }
+        }
+        
+        try:
+            with st.spinner("AI is thinking... Predicting compounds from functional groups..."):
+                response = self.ai_generator_model.generate_content(
+                    full_prompt,
+                    generation_config={"response_mime_type": "application/json", "response_schema": response_schema}
+                )
+            
+            json_string = response.text.strip()
+            
+            # Robust JSON parsing for AI response
+            if not json_string.startswith("[") or not json_string.endswith("]"):
+                st.warning("AI response not clean JSON array. Attempting to extract JSON...")
+                json_start = json_string.find('[')
+                json_end = json_string.rfind(']')
+                if json_start != -1 and json_end != -1:
+                    json_string = json_string[json_start : json_end + 1]
+                else:
+                    raise json.JSONDecodeError("Could not extract clean JSON array from AI response.", json_string, 0)
+
+            predicted_compounds = json.loads(json_string)
+
+            # Basic validation of the parsed structure
+            if not isinstance(predicted_compounds, list):
+                raise ValueError("AI response is not a JSON list as expected.")
+            for item in predicted_compounds:
+                if not isinstance(item, dict) or "Compound" not in item or "Reasoning" not in item:
+                    raise ValueError("AI response list items are not in expected {Compound, Reasoning} format.")
+            
+            return predicted_compounds
+
+        except json.JSONDecodeError as jde:
+            st.error(f"Failed to parse AI's JSON response: {jde}. Response: {json_string[:500]}...")
+            return []
+        except ValueError as ve:
+            st.error(f"AI response structural error: {ve}")
+            return []
+        except Exception as e:
+            st.error(f"AI compound prediction failed: {e}. Please check model access or prompt quality.")
+            return []
+
+
     def visualize(self, spectra_data: List[Dict[str, Any]], plot_type: str = "overlay"):
         """
         Generates a matplotlib plot of one or more Raman spectra.
@@ -320,7 +449,9 @@ class RamanAnalyzer:
 
 # Instantiate Analyzer Core once using st.cache_resource
 @st.cache_resource
-def get_analyzer_instance(json_db_paths: List[str], ml_model_path: str = None) -> RamanAnalyzer:
+def get_analyzer_instance(json_db_paths: List[str], ml_model_path: str = None, 
+                          expert_functional_group_db_paths: List[str] = None, 
+                          ai_raw_raman_shifts_db_paths: List[str] = None) -> RamanAnalyzer:
     """
     Initializes and caches the RamanAnalyzer instance.
     Handles API key retrieval and Gemini configuration here, preventing early Streamlit errors.
@@ -342,8 +473,21 @@ def get_analyzer_instance(json_db_paths: List[str], ml_model_path: str = None) -
     # Define the model name here, after API key configuration
     gemini_model_name_for_analyzer = "gemini-2.0-flash" 
 
-    # Now, initialize RamanAnalyzer, passing the configured model name
-    return RamanAnalyzer(json_db_paths, ml_model_path, gemini_model_name=gemini_model_name_for_analyzer)
+    # Use a dummy RamanAnalyzer instance temporarily to access _load_json_data
+    # This is a bit of a hack but ensures _load_json_data is available and respects st.cache_resource
+    temp_analyzer = RamanAnalyzer()
+    
+    # Load functional group data for ExpertInterpreter
+    expert_functional_group_data = temp_analyzer._load_json_data(expert_functional_group_db_paths, is_compound_db=False)
+    
+    # Load raw Raman shifts data specifically for AI prompt
+    ai_raw_raman_shifts_data = temp_analyzer._load_json_data(ai_raw_raman_shifts_db_paths, is_compound_db=False)
+    
+    # Now, initialize the actual RamanAnalyzer, passing both functional group databases
+    return RamanAnalyzer(json_db_paths, ml_model_path, 
+                         gemini_model_name=gemini_model_name_for_analyzer, 
+                         functional_group_database=expert_functional_group_data, # For ExpertInterpreter
+                         ai_raw_raman_shifts_data=ai_raw_raman_shifts_data) # For AI prompt
 
 
 # --- PubChem API Integration ---
@@ -421,22 +565,25 @@ def main():
     script_directory = os.path.dirname(os.path.abspath(__file__))
     
     # Database configuration - use GitHub URL for remote access
-    # This URL should point to the raw content of your JSON database on GitHub
-    # Make sure 'main' is the correct branch and 'data/up.json' is the correct path in your repo
     GITHUB_DB_URL = "https://raw.githubusercontent.com/deviprasath-009/raman-analyser/main/data/up.json"
-    
-    # Local fallback path (if needed) - provide your local path here if you have a local copy
-    # For 'raman data 1 .json' from your previous example, it would be:
-    LOCAL_DB_PATH = os.path.join(script_directory, "raman data 1 .json") # Ensure this file exists if you use it
+    LOCAL_DB_PATH = os.path.join(script_directory, "raman data 1 .json")
+    DB_JSON_PATHS = [GITHUB_DB_URL, LOCAL_DB_PATH] 
+
+    # Functional Group Database for ExpertInterpreter (original functional_groups.json)
+    # Reverting to the previous expert functional group data source
+    EXPERT_FG_DB_JSON_PATHS = ["https://raw.githubusercontent.com/deviprasath-009/raman-analyser/main/data/functional_groups.json"] 
+
+    # Raw Raman Shifts data specifically for AI prompt (raw_raman_shiifts.json)
+    GITHUB_RAW_RAMAN_SHIFTS_URL = "https://raw.githubusercontent.com/deviprasath-009/raman-analyser/refs/heads/main/data/raw_raman_shiifts.json"
+    RAW_RAMAN_SHIFTS_JSON_PATHS = [GITHUB_RAW_RAMAN_SHIFTS_URL]
 
     # Model path for your ML model (e.g., trained MLP classifier)
     ML_MODEL_PATH = os.path.join(script_directory, "raman_mlp_model.joblib")
     
-    # Use GitHub URL as primary for the database. If that fails, consider a local path if applicable.
-    DB_JSON_PATHS = [GITHUB_DB_URL, LOCAL_DB_PATH] # Can list multiple paths, _load_databases will try them
-
-    # Initialize the analyzer instance. This now handles API key and Gemini model setup.
-    analyzer = get_analyzer_instance(DB_JSON_PATHS, ML_MODEL_PATH)
+    # Initialize the analyzer instance, passing both functional group paths
+    analyzer = get_analyzer_instance(DB_JSON_PATHS, ML_MODEL_PATH, 
+                                     expert_functional_group_db_paths=EXPERT_FG_DB_JSON_PATHS,
+                                     ai_raw_raman_shifts_db_paths=RAW_RAMAN_SHIFTS_JSON_PATHS)
 
     st.sidebar.header("📂 Data & Sample Information")
 
@@ -499,10 +646,11 @@ def main():
     )
 
     if uploaded_files:
-        all_processed_spectra = [] # To store data for plotting (wavenumbers, intensities, peaks, label)
-        all_compound_suggestions = {} # To aggregate compound suggestions
-        all_functional_groups = [] # To aggregate functional groups
-        all_diagnostics = [] # To aggregate diagnostics
+        all_processed_spectra = [] 
+        all_compound_suggestions_db = {} 
+        all_functional_groups = [] 
+        all_diagnostics = [] 
+        all_ai_predicted_compounds = [] 
 
         with st.status("Processing spectrum(s) and running analysis...", expanded=True) as status:
             meta = {
@@ -542,28 +690,54 @@ def main():
                             'label': intensity_label
                         })
 
-                        # Aggregate results
+                        # Aggregate Diagnostics
                         for diag in results['diagnostics']:
                             if diag not in all_diagnostics:
                                 all_diagnostics.append(diag)
+                        
+                        # Aggregate Functional Groups
                         for fg_name, fg_peak in results['functional_groups']:
-                            if (fg_name, fg_peak) not in all_functional_groups:
+                            # Ensure unique functional group entries based on name and rounded peak
+                            found = False
+                            for existing_fg_name, existing_fg_peak in all_functional_groups:
+                                if existing_fg_name == fg_name and abs(existing_fg_peak - fg_peak) < 1.0: # small tolerance for peak
+                                    found = True
+                                    break
+                            if not found:
                                 all_functional_groups.append((fg_name, fg_peak))
                         
+                        # Aggregate Database Compound Suggestions
                         for suggestion in results['compound_suggestions']:
                             compound_name = suggestion['Compound']
-                            if compound_name not in all_compound_suggestions:
-                                all_compound_suggestions[compound_name] = {
+                            if compound_name not in all_compound_suggestions_db:
+                                all_compound_suggestions_db[compound_name] = {
                                     'Group': suggestion['Group'],
                                     'Total Matched Peaks': suggestion['Matched Peaks Count'],
                                     'Occurrences': 1,
                                     'Source Spectra': [intensity_label]
                                 }
                             else:
-                                all_compound_suggestions[compound_name]['Total Matched Peaks'] += suggestion['Matched Peaks Count']
-                                all_compound_suggestions[compound_name]['Occurrences'] += 1
-                                if intensity_label not in all_compound_suggestions[compound_name]['Source Spectra']:
-                                    all_compound_suggestions[compound_name]['Source Spectra'].append(intensity_label)
+                                all_compound_suggestions_db[compound_name]['Total Matched Peaks'] += suggestion['Matched Peaks Count']
+                                all_compound_suggestions_db[compound_name]['Occurrences'] += 1
+                                if intensity_label not in all_compound_suggestions_db[compound_name]['Source Spectra']:
+                                    all_compound_suggestions_db[compound_name]['Source Spectra'].append(intensity_label)
+
+                        # --- NEW: AI Compound Prediction for each spectrum ---
+                        if analyzer.ai_generator_model:
+                            status.write(f"AI predicting compounds for {intensity_label}...")
+                            ai_predictions = analyzer.predict_compounds_with_ai(
+                                results['peaks'].tolist(), # Pass peaks as list
+                                results['functional_groups'],
+                                results['diagnostics'],
+                                meta
+                            )
+                            for pred in ai_predictions:
+                                # Add source spectrum info to AI predictions as well
+                                pred_with_source = pred.copy()
+                                pred_with_source['Source Spectrum'] = intensity_label
+                                all_ai_predicted_compounds.append(pred_with_source)
+                        else:
+                            st.warning("AI model not available for compound prediction.")
 
                 except Exception as e:
                     st.error(f"An error occurred processing {uploaded_file.name}: {e}")
@@ -599,15 +773,15 @@ def main():
                 st.info("No common functional groups detected across all spectra based on expert rules.")
             st.markdown("---")
 
-            st.markdown("#### 🧪 Top Compound Suggestions (Aggregated)")
-            if not all_compound_suggestions:
+            st.markdown("#### 🧪 Top Compound Suggestions from Database (Aggregated)")
+            if not all_compound_suggestions_db:
                 st.warning("No matching compounds found in the loaded database with the given tolerance and minimum peak matches for any spectrum.")
                 st.info("Consider adjusting the 'tolerance' or 'min_matches' parameters in the MolecularIdentifier class if you expect matches.")
             else:
-                # Convert aggregated suggestions to a DataFrame for display
-                agg_suggestions_list = []
-                for compound, details in all_compound_suggestions.items():
-                    agg_suggestions_list.append({
+                # Convert aggregated database suggestions to a DataFrame for display
+                agg_db_suggestions_list = []
+                for compound, details in all_compound_suggestions_db.items():
+                    agg_db_suggestions_list.append({
                         "Compound": compound,
                         "Group": details['Group'],
                         "Total Matched Peaks": details['Total Matched Peaks'],
@@ -616,33 +790,58 @@ def main():
                     })
                 
                 # Sort by occurrences and then total matched peaks for higher confidence first
-                df_agg_match = pd.DataFrame(agg_suggestions_list).sort_values(
+                df_agg_db_match = pd.DataFrame(agg_db_suggestions_list).sort_values(
                     by=["Occurrences Across Spectra", "Total Matched Peaks"], 
                     ascending=[False, False]
                 ).reset_index(drop=True)
-                st.dataframe(df_agg_match, use_container_width=True, hide_index=True)
+                st.dataframe(df_agg_db_match, use_container_width=True, hide_index=True)
 
-                # AI Summary for the highest confidence compound
-                if not df_agg_match.empty:
-                    top_match_compound = df_agg_match.iloc[0]["Compound"]
-                    top_match_group = df_agg_match.iloc[0]["Group"]
-                    st.markdown("#### 🧠 AI-Generated Summary for Highest Confidence Compound")
+            st.markdown("---")
+            st.markdown("#### 🧠 AI-Predicted Compounds (Based on Functional Groups)")
+            if not all_ai_predicted_compounds:
+                st.info("No compounds predicted by AI for the processed spectra.")
+            else:
+                # Convert AI predicted compounds to DataFrame for display
+                df_ai_predictions = pd.DataFrame(all_ai_predicted_compounds)
+                st.dataframe(df_ai_predictions, use_container_width=True, hide_index=True)
+
+            st.markdown("---")
+
+            # AI Summary for the highest confidence compound from DB, or from AI if DB is empty
+            if not all_compound_suggestions_db and not all_ai_predicted_compounds:
+                st.info("No compound suggestions (database or AI) available for summary/PubChem lookup.")
+            else:
+                top_match_compound_summary = None
+                top_match_group_summary = None
+                summary_source_type = None
+
+                # Determine the top compound for summary based on which source has data
+                if not df_agg_db_match.empty: # Prefer DB top match for detailed summary
+                    top_match_compound_summary = df_agg_db_match.iloc[0]["Compound"]
+                    top_match_group_summary = df_agg_db_match.iloc[0]["Group"]
+                    summary_source_type = "Database"
+                elif not df_ai_predictions.empty: # Fallback to AI top match if no DB matches
+                    top_match_compound_summary = df_ai_predictions.iloc[0]["Compound"]
+                    top_match_group_summary = "AI Prediction" 
+                    summary_source_type = "AI"
+                
+                if top_match_compound_summary:
+                    st.markdown(f"#### 🧠 AI-Generated Summary for Top Compound ({summary_source_type})")
                     if analyzer.ai_generator_model:
-                        with st.spinner(f"Generating AI summary for {top_match_compound} using gemini-2.0-flash..."):
-                            ai_summary = analyzer.generate_summary(top_match_compound, top_match_group)
+                        with st.spinner(f"Generating AI summary for {top_match_compound_summary} using gemini-2.0-flash..."):
+                            ai_summary = analyzer.generate_summary(top_match_compound_summary, top_match_group_summary)
                         st.markdown(ai_summary)
                     else:
                         st.warning("AI summary generation skipped because the model could not be loaded.")
 
-                # PubChem Details for the highest confidence compound
-                if not df_agg_match.empty:
-                    st.markdown("#### 🌐 Fetch Details from PubChem (Highest Confidence Compound)")
-                    if st.button(f"Get PubChem Details for {top_match_compound}"):
-                        pubchem_info = fetch_pubchem_data(top_match_compound)
+                    # PubChem Details for the highest confidence compound
+                    st.markdown(f"#### 🌐 Fetch Details from PubChem (Top Compound from {summary_source_type})")
+                    if st.button(f"Get PubChem Details for {top_match_compound_summary}"):
+                        pubchem_info = fetch_pubchem_data(top_match_compound_summary)
                         if "error" in pubchem_info:
                             st.error(pubchem_info["error"])
                         else:
-                            with st.expander(f"**Details for {top_match_compound} (CID: {pubchem_info.get('cid', 'N/A')})**", expanded=True):
+                            with st.expander(f"**Details for {top_match_compound_summary} (CID: {pubchem_info.get('cid', 'N/A')})**", expanded=True):
                                 st.markdown(f"**Molecular Formula:** {pubchem_info['properties'].get('MolecularFormula', 'N/A')}")
                                 st.markdown(f"**IUPAC Name:** {pubchem_info['properties'].get('IUPACName', 'N/A')}")
                                 st.markdown(f"**Canonical SMILES:** `{pubchem_info['properties'].get('CanonicalSMILES', 'N/A')}`")
@@ -651,6 +850,7 @@ def main():
                                 st.write(pubchem_info.get('description', 'No detailed description available.'))
                                 st.markdown(f"[View on PubChem](https://pubchem.ncbi.nlm.nih.gov/compound/{pubchem_info.get('cid')})")
                     st.markdown("---")
+
 
     else:
         st.info("Please upload one or more Raman spectrum CSV files to begin analysis.")
@@ -668,8 +868,9 @@ def main():
         -   **Multi-Spectrum Analysis:** Upload multiple CSVs or a single CSV with multiple intensity columns.
         -   **Flexible Visualization:** Choose between **Overlay** and **Stacked** plots for your spectra.
         -   **Automated Pre-processing:** Despiking and peak detection for each spectrum.
-        -   **Expert Rules:** Identifies common functional groups and provides diagnostic insights per spectrum, then consolidates them.
+        -   **Expert Rules (Externalized):** Functional group identification rules are now loaded from an external JSON file for easier updates.
         -   **Database Matching:** Suggests compounds by comparing your spectrum's peaks to a custom database, with aggregated confidence.
+        -   **AI-Powered Compound Prediction:** Utilizes Google Gemini to predict compounds based on detected functional groups and other spectral features.
         -   **AI-Powered Summary:** Generates concise descriptions of the highest confidence suggested compound using **Google Gemini API**.
         -   **PubChem Integration:** Fetches additional chemical details (formula, IUPAC name, SMILES, description) from the PubChem database for the highest confidence compound.
         """)
