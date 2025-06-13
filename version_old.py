@@ -344,7 +344,7 @@ def fetch_pubchem_data(compound_name: str) -> Dict[str, Any]:
     cid_url = f"{base_url}/compound/name/{compound_name}/cids/JSON"
     try:
         response = requests.get(cid_url, timeout=10)
-        response.raise_for_status()
+        response.raise_for_status() # Corrected line
         cid_data = response.json()
         cids = cid_data.get("IdentifierList", {}).get("CID")
         if not cids:
@@ -359,7 +359,7 @@ def fetch_pubchem_data(compound_name: str) -> Dict[str, Any]:
     properties = {}
     try:
         response = requests.get(properties_url, timeout=10)
-        response.raise_for_status()
+        response.raise_for_status() # This one was already correct
         prop_data = response.json()
         props_list = prop_data.get("PropertyTable", {}).get("Properties")
         if props_list:
@@ -374,7 +374,7 @@ def fetch_pubchem_data(compound_name: str) -> Dict[str, Any]:
     description_url = f"{base_url}/compound/cid/{cid}/description/JSON"
     try:
         response = requests.get(description_url, timeout=10)
-        response.raise_status()
+        response.raise_for_status() # Corrected line
         desc_data = response.json()
         description_sections = desc_data.get("InformationList", {}).get("Information", [])
         for info_item in description_sections:
