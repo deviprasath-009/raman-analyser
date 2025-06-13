@@ -1,0 +1,125 @@
+{
+  "NH2": [
+    [3400, 3330, "Antisymmetric stretch"],
+    [3300, 3250, "Symmetric stretch"],
+    [1650, 1590, "Scissors bend"]
+  ],
+  "OH": [
+    [3380, 3340, "stretch"]
+  ],
+  "CH": [
+    [3100, 3000, "Aromatic stretch"],
+    [3062, 3062, "stretch"],
+    [3057, 3057, "Aromatic stretch"],
+    [3040, 3000, "stretch"],
+    [3026, 3026, "Symmetric =CH2 stretch"],
+    [2590, 2560, "SH stretch"]
+  ],
+  "CH3": [
+    [2969, 2965, "Antisymmetric stretch"],
+    [2929, 2912, "Antisymmetric stretch"],
+    [2884, 2883, "Symmetric stretch"],
+    [1466, 1465, "Deformation"],
+    [1385, 1368, "Symmetric deformation"]
+  ],
+  "CH2": [
+    [2861, 2849, "Symmetric stretch"],
+    [1473, 1446, "Deformation"],
+    [1310, 1175, "Twist and rock"],
+    [1305, 1295, "In-phase twist"]
+  ],
+  "C≡C": [
+    [2316, 2233, "stretch"],
+    [2301, 2231, "stretch"],
+    [2160, 2100, "stretch"]
+  ],
+  "C=O": [
+    [1820, 1820, "Symmetric stretch"],
+    [1810, 1788, "stretch"],
+    [1805, 1799, "Symmetric stretch"],
+    [1770, 1730, "stretch"],
+    [1743, 1729, "stretch"],
+    [1725, 1700, "stretch"],
+    [1654, 1649, "Symmetric stretch (cyclic dimer)"]
+  ],
+  "C=C": [
+    [1689, 1644, "stretch"],
+    [1680, 1665, "stretch"],
+    [1678, 1664, "stretch"],
+    [1676, 1665, "stretch"],
+    [1660, 1654, "stretch"],
+    [1658, 1644, "stretch"],
+    [1649, 1625, "stretch"],
+    [1648, 1638, "stretch"],
+    [1616, 1571, "stretch"],
+    [1596, 1547, "stretch"],
+    [1581, 1465, "stretch"]
+  ],
+  "COOH": [
+    [1725, 1700, "C=O stretch"],
+    [1440, 1340, "COO- stretch"],
+    [1320, 1210, "OH bend"]
+  ],
+  "NO2": [
+    [1634, 1622, "Antisymmetric stretch"],
+    [1560, 1550, "Antisymmetric stretch"],
+    [1555, 1550, "Antisymmetric stretch"],
+    [1545, 1535, "Antisymmetric stretch"],
+    [1395, 1380, "Symmetric stretch"],
+    [1375, 1360, "Symmetric stretch"],
+    [1355, 1345, "Symmetric stretch"],
+    [1282, 1275, "Symmetric stretch"]
+  ],
+  "C≡N": [
+    [2161, 2134, "stretch"],
+    [2156, 2140, "stretch"]
+  ],
+  "C=N": [
+    [1666, 1652, "stretch"],
+    [1665, 1650, "stretch"],
+    [1663, 1636, "Symmetric stretch"],
+    [1660, 1649, "stretch"],
+    [1660, 1610, "stretch"]
+  ],
+  "SO2": [
+    [1196, 1188, "Symmetric stretch"],
+    [1172, 1165, "Symmetric stretch"],
+    [1145, 1125, "Symmetric stretch"]
+  ],
+  "C-O": [
+    [1480, 1470, "OCH3/OCH2 deformation"],
+    [930, 830, "Symmetric COC stretch"],
+    [825, 820, "C3O skeletal stretch"],
+    [760, 730, "C4O skeletal stretch"]
+  ],
+  "C-S": [
+    [740, 585, "stretch"],
+    [735, 690, "C=S stretch"],
+    [715, 620, "stretch"],
+    [525, 510, "S-S stretch"],
+    [510, 480, "S-S stretch"]
+  ],
+  "C-X": [
+    [730, 720, "C-Cl stretch"],
+    [660, 650, "C-Cl stretch (PH)"],
+    [615, 605, "C-Cl stretch (SHH)"],
+    [570, 560, "C-Cl stretch (THHH)"],
+    [655, 640, "C-Br stretch"],
+    [565, 560, "C-Br stretch (PH)"],
+    [540, 535, "C-Br stretch (SHH)"],
+    [520, 510, "C-Br stretch (THHH)"],
+    [610, 590, "C-I stretch"],
+    [510, 500, "C-I stretch (PH)"],
+    [495, 485, "C-I stretch (SHH/THHH)"]
+  ],
+  "Aromatic": [
+    [3100, 3000, "CH stretch"],
+    [1630, 1550, "Ring stretches"],
+    [1230, 1200, "Ring vibration"],
+    [1060, 1020, "Ring vibration"],
+    [1030, 1015, "In-plane CH deformation"],
+    [1010, 990, "Trigonal ring breathing"],
+    [830, 720, "Ring vibration"],
+    [630, 615, "Ring deformation"]
+  ]
+}
