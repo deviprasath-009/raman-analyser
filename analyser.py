@@ -18,7 +18,7 @@ import google.generativeai as genai
 
 # --- SET PAGE CONFIG FIRST ---
 # This line MUST be the very first Streamlit command in your script.
-st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded", icon="�")
 
 # ------------------------ Utility Functions ------------------------
 def despike_spectrum(intensities: np.ndarray) -> np.ndarray:
@@ -111,7 +111,6 @@ class MolecularIdentifier:
         matches = []
 
         if not isinstance(database, dict):
-            # This message will be logged/handled by the caller, not directly displayed by st.error
             return matches
 
         for category, compounds in database.items():
@@ -458,12 +457,8 @@ def get_analyzer_instance(json_db_paths: List[str], ml_model_path: str = None,
 
     gemini_model_name_for_analyzer = "gemini-2.0-flash" 
 
-    # Use a dummy RamanAnalyzer instance temporarily to access _load_json_data
-    # This is a hack to reuse the _load_json_data method which is part of RamanAnalyzer
-    # while keeping get_analyzer_instance clean for caching.
-    class DummyLoader:
+    class DataLoader: # Renamed from DummyLoader for clarity
         def _load_json_data(self, paths: List[str], is_compound_db: bool) -> Tuple[Any, Optional[str], Optional[str]]:
-            # This is a simplified version just for loading data in get_analyzer_instance context
             data_collection: Any = {} if is_compound_db else []
             success_messages = []
             error_messages = []
@@ -511,7 +506,7 @@ def get_analyzer_instance(json_db_paths: List[str], ml_model_path: str = None,
                         if isinstance(data, list):
                             data_collection.extend(data)
                         else:
-                            error_messages.append(f"Functional group data in {os.path.basename(path)} is not a list.")
+                            error_messages.append(f"Functional group data in {os.path.basename(path)} is not a list. Skipped.")
 
                 except json.JSONDecodeError as e:
                     error_messages.append(f"JSON parsing error in {os.path.basename(path)}: {e}")
@@ -522,7 +517,7 @@ def get_analyzer_instance(json_db_paths: List[str], ml_model_path: str = None,
             
             return data_collection, "; ".join(success_messages) if success_messages else None, "; ".join(error_messages) if error_messages else None
 
-    loader = DummyLoader() # Create an instance of the dummy loader
+    loader = DataLoader() # Create an instance of the data loader
 
     # Load functional group data for ExpertInterpreter
     expert_functional_group_data, fg_expert_success, fg_expert_error = loader._load_json_data(expert_functional_group_db_paths, is_compound_db=False)
@@ -643,20 +638,16 @@ def main():
                                      ai_raw_raman_shifts_db_paths=RAW_RAMAN_SHIFTS_JSON_PATHS)
 
     # Display initialization messages at the bottom
-    # Use a placeholder for the messages and update it as needed.
-    # This prevents the ugly blocks appearing at the top and ensures they are displayed
-    # outside the cached context.
-    message_placeholder = st.empty()
-    if init_messages:
-        for msg in init_messages:
-            if msg["type"] == "success":
-                st.toast(msg["text"], icon="✅")
-            elif msg["type"] == "warning":
-                st.warning(msg["text"])
-            elif msg["type"] == "error":
-                st.error(msg["text"])
-            elif msg["type"] == "info":
-                st.info(msg["text"])
+    # These messages will now appear correctly without causing caching issues.
+    for msg in init_messages:
+        if msg["type"] == "success":
+            st.toast(msg["text"], icon="✅")
+        elif msg["type"] == "warning":
+            st.warning(msg["text"])
+        elif msg["type"] == "error":
+            st.error(msg["text"])
+        elif msg["type"] == "info":
+            st.info(msg["text"])
 
 
     st.sidebar.header("📂 Data & Sample Information")
@@ -951,3 +942,4 @@ def main():
 
     else:
         st.info("Please upload one or more Raman spectrum CSV files to begin analysis.")
+�
