@@ -571,7 +571,7 @@ def main():
 
     # Functional Group Database for ExpertInterpreter (original functional_groups.json)
     # Reverting to the previous expert functional group data source
-    EXPERT_FG_DB_JSON_PATHS = ["https://raw.githubusercontent.com/deviprasath-009/raman-analyser/main/data/functional_groups.json"] 
+    EXPERT_FG_DB_JSON_PATHS = ["https://raw.githubusercontent.com/deviprasath-009/raman-analyser/refs/heads/main/data/raw_raman_shiifts.json"] 
 
     # Raw Raman Shifts data specifically for AI prompt (raw_raman_shiifts.json)
     GITHUB_RAW_RAMAN_SHIFTS_URL = "https://raw.githubusercontent.com/deviprasath-009/raman-analyser/refs/heads/main/data/raw_raman_shiifts.json"
