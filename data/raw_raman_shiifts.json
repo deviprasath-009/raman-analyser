@@ -1,125 +1,536 @@
-{
-  "NH2": [
-    [3400, 3330, "Antisymmetric stretch"],
-    [3300, 3250, "Symmetric stretch"],
-    [1650, 1590, "Scissors bend"]
-  ],
-  "OH": [
-    [3380, 3340, "stretch"]
-  ],
-  "CH": [
-    [3100, 3000, "Aromatic stretch"],
-    [3062, 3062, "stretch"],
-    [3057, 3057, "Aromatic stretch"],
-    [3040, 3000, "stretch"],
-    [3026, 3026, "Symmetric =CH2 stretch"],
-    [2590, 2560, "SH stretch"]
-  ],
-  "CH3": [
-    [2969, 2965, "Antisymmetric stretch"],
-    [2929, 2912, "Antisymmetric stretch"],
-    [2884, 2883, "Symmetric stretch"],
-    [1466, 1465, "Deformation"],
-    [1385, 1368, "Symmetric deformation"]
-  ],
-  "CH2": [
-    [2861, 2849, "Symmetric stretch"],
-    [1473, 1446, "Deformation"],
-    [1310, 1175, "Twist and rock"],
-    [1305, 1295, "In-phase twist"]
-  ],
-  "C≡C": [
-    [2316, 2233, "stretch"],
-    [2301, 2231, "stretch"],
-    [2160, 2100, "stretch"]
-  ],
-  "C=O": [
-    [1820, 1820, "Symmetric stretch"],
-    [1810, 1788, "stretch"],
-    [1805, 1799, "Symmetric stretch"],
-    [1770, 1730, "stretch"],
-    [1743, 1729, "stretch"],
-    [1725, 1700, "stretch"],
-    [1654, 1649, "Symmetric stretch (cyclic dimer)"]
-  ],
-  "C=C": [
-    [1689, 1644, "stretch"],
-    [1680, 1665, "stretch"],
-    [1678, 1664, "stretch"],
-    [1676, 1665, "stretch"],
-    [1660, 1654, "stretch"],
-    [1658, 1644, "stretch"],
-    [1649, 1625, "stretch"],
-    [1648, 1638, "stretch"],
-    [1616, 1571, "stretch"],
-    [1596, 1547, "stretch"],
-    [1581, 1465, "stretch"]
-  ],
-  "COOH": [
-    [1725, 1700, "C=O stretch"],
-    [1440, 1340, "COO- stretch"],
-    [1320, 1210, "OH bend"]
-  ],
-  "NO2": [
-    [1634, 1622, "Antisymmetric stretch"],
-    [1560, 1550, "Antisymmetric stretch"],
-    [1555, 1550, "Antisymmetric stretch"],
-    [1545, 1535, "Antisymmetric stretch"],
-    [1395, 1380, "Symmetric stretch"],
-    [1375, 1360, "Symmetric stretch"],
-    [1355, 1345, "Symmetric stretch"],
-    [1282, 1275, "Symmetric stretch"]
-  ],
-  "C≡N": [
-    [2161, 2134, "stretch"],
-    [2156, 2140, "stretch"]
-  ],
-  "C=N": [
-    [1666, 1652, "stretch"],
-    [1665, 1650, "stretch"],
-    [1663, 1636, "Symmetric stretch"],
-    [1660, 1649, "stretch"],
-    [1660, 1610, "stretch"]
-  ],
-  "SO2": [
-    [1196, 1188, "Symmetric stretch"],
-    [1172, 1165, "Symmetric stretch"],
-    [1145, 1125, "Symmetric stretch"]
-  ],
-  "C-O": [
-    [1480, 1470, "OCH3/OCH2 deformation"],
-    [930, 830, "Symmetric COC stretch"],
-    [825, 820, "C3O skeletal stretch"],
-    [760, 730, "C4O skeletal stretch"]
-  ],
-  "C-S": [
-    [740, 585, "stretch"],
-    [735, 690, "C=S stretch"],
-    [715, 620, "stretch"],
-    [525, 510, "S-S stretch"],
-    [510, 480, "S-S stretch"]
-  ],
-  "C-X": [
-    [730, 720, "C-Cl stretch"],
-    [660, 650, "C-Cl stretch (PH)"],
-    [615, 605, "C-Cl stretch (SHH)"],
-    [570, 560, "C-Cl stretch (THHH)"],
-    [655, 640, "C-Br stretch"],
-    [565, 560, "C-Br stretch (PH)"],
-    [540, 535, "C-Br stretch (SHH)"],
-    [520, 510, "C-Br stretch (THHH)"],
-    [610, 590, "C-I stretch"],
-    [510, 500, "C-I stretch (PH)"],
-    [495, 485, "C-I stretch (SHH/THHH)"]
-  ],
-  "Aromatic": [
-    [3100, 3000, "CH stretch"],
-    [1630, 1550, "Ring stretches"],
-    [1230, 1200, "Ring vibration"],
-    [1060, 1020, "Ring vibration"],
-    [1030, 1015, "In-plane CH deformation"],
-    [1010, 990, "Trigonal ring breathing"],
-    [830, 720, "Ring vibration"],
-    [630, 615, "Ring deformation"]
-  ]
-}
+[
+  {
+    "group": "NH2",
+    "min_wavenumber": 3400,
+    "max_wavenumber": 3330,
+    "description": "Antisymmetric stretch"
+  },
+  {
+    "group": "NH2",
+    "min_wavenumber": 3300,
+    "max_wavenumber": 3250,
+    "description": "Symmetric stretch"
+  },
+  {
+    "group": "NH2",
+    "min_wavenumber": 1650,
+    "max_wavenumber": 1590,
+    "description": "Scissors bend"
+  },
+  {
+    "group": "OH",
+    "min_wavenumber": 3380,
+    "max_wavenumber": 3340,
+    "description": "stretch"
+  },
+  {
+    "group": "CH",
+    "min_wavenumber": 3100,
+    "max_wavenumber": 3000,
+    "description": "Aromatic stretch"
+  },
+  {
+    "group": "CH",
+    "min_wavenumber": 3062,
+    "max_wavenumber": 3062,
+    "description": "stretch"
+  },
+  {
+    "group": "CH",
+    "min_wavenumber": 3057,
+    "max_wavenumber": 3057,
+    "description": "Aromatic stretch"
+  },
+  {
+    "group": "CH",
+    "min_wavenumber": 3040,
+    "max_wavenumber": 3000,
+    "description": "stretch"
+  },
+  {
+    "group": "CH",
+    "min_wavenumber": 3026,
+    "max_wavenumber": 3026,
+    "description": "Symmetric =CH2 stretch"
+  },
+  {
+    "group": "CH",
+    "min_wavenumber": 2590,
+    "max_wavenumber": 2560,
+    "description": "SH stretch"
+  },
+  {
+    "group": "CH3",
+    "min_wavenumber": 2969,
+    "max_wavenumber": 2965,
+    "description": "Antisymmetric stretch"
+  },
+  {
+    "group": "CH3",
+    "min_wavenumber": 2929,
+    "max_wavenumber": 2912,
+    "description": "Antisymmetric stretch"
+  },
+  {
+    "group": "CH3",
+    "min_wavenumber": 2884,
+    "max_wavenumber": 2883,
+    "description": "Symmetric stretch"
+  },
+  {
+    "group": "CH3",
+    "min_wavenumber": 1466,
+    "max_wavenumber": 1465,
+    "description": "Deformation"
+  },
+  {
+    "group": "CH3",
+    "min_wavenumber": 1385,
+    "max_wavenumber": 1368,
+    "description": "Symmetric deformation"
+  },
+  {
+    "group": "CH2",
+    "min_wavenumber": 2861,
+    "max_wavenumber": 2849,
+    "description": "Symmetric stretch"
+  },
+  {
+    "group": "CH2",
+    "min_wavenumber": 1473,
+    "max_wavenumber": 1446,
+    "description": "Deformation"
+  },
+  {
+    "group": "CH2",
+    "min_wavenumber": 1310,
+    "max_wavenumber": 1175,
+    "description": "Twist and rock"
+  },
+  {
+    "group": "CH2",
+    "min_wavenumber": 1305,
+    "max_wavenumber": 1295,
+    "description": "In-phase twist"
+  },
+  {
+    "group": "C≡C",
+    "min_wavenumber": 2316,
+    "max_wavenumber": 2233,
+    "description": "stretch"
+  },
+  {
+    "group": "C≡C",
+    "min_wavenumber": 2301,
+    "max_wavenumber": 2231,
+    "description": "stretch"
+  },
+  {
+    "group": "C≡C",
+    "min_wavenumber": 2160,
+    "max_wavenumber": 2100,
+    "description": "stretch"
+  },
+  {
+    "group": "C=O",
+    "min_wavenumber": 1820,
+    "max_wavenumber": 1820,
+    "description": "Symmetric stretch"
+  },
+  {
+    "group": "C=O",
+    "min_wavenumber": 1810,
+    "max_wavenumber": 1788,
+    "description": "stretch"
+  },
+  {
+    "group": "C=O",
+    "min_wavenumber": 1805,
+    "max_wavenumber": 1799,
+    "description": "Symmetric stretch"
+  },
+  {
+    "group": "C=O",
+    "min_wavenumber": 1770,
+    "max_wavenumber": 1730,
+    "description": "stretch"
+  },
+  {
+    "group": "C=O",
+    "min_wavenumber": 1743,
+    "max_wavenumber": 1729,
+    "description": "stretch"
+  },
+  {
+    "group": "C=O",
+    "min_wavenumber": 1725,
+    "max_wavenumber": 1700,
+    "description": "stretch"
+  },
+  {
+    "group": "C=O",
+    "min_wavenumber": 1654,
+    "max_wavenumber": 1649,
+    "description": "Symmetric stretch (cyclic dimer)"
+  },
+  {
+    "group": "C=C",
+    "min_wavenumber": 1689,
+    "max_wavenumber": 1644,
+    "description": "stretch"
+  },
+  {
+    "group": "C=C",
+    "min_wavenumber": 1680,
+    "max_wavenumber": 1665,
+    "description": "stretch"
+  },
+  {
+    "group": "C=C",
+    "min_wavenumber": 1678,
+    "max_wavenumber": 1664,
+    "description": "stretch"
+  },
+  {
+    "group": "C=C",
+    "min_wavenumber": 1676,
+    "max_wavenumber": 1665,
+    "description": "stretch"
+  },
+  {
+    "group": "C=C",
+    "min_wavenumber": 1660,
+    "max_wavenumber": 1654,
+    "description": "stretch"
+  },
+  {
+    "group": "C=C",
+    "min_wavenumber": 1658,
+    "max_wavenumber": 1644,
+    "description": "stretch"
+  },
+  {
+    "group": "C=C",
+    "min_wavenumber": 1649,
+    "max_wavenumber": 1625,
+    "description": "stretch"
+  },
+  {
+    "group": "C=C",
+    "min_wavenumber": 1648,
+    "max_wavenumber": 1638,
+    "description": "stretch"
+  },
+  {
+    "group": "C=C",
+    "min_wavenumber": 1616,
+    "max_wavenumber": 1571,
+    "description": "stretch"
+  },
+  {
+    "group": "C=C",
+    "min_wavenumber": 1596,
+    "max_wavenumber": 1547,
+    "description": "stretch"
+  },
+  {
+    "group": "C=C",
+    "min_wavenumber": 1581,
+    "max_wavenumber": 1465,
+    "description": "stretch"
+  },
+  {
+    "group": "COOH",
+    "min_wavenumber": 1725,
+    "max_wavenumber": 1700,
+    "description": "C=O stretch"
+  },
+  {
+    "group": "COOH",
+    "min_wavenumber": 1440,
+    "max_wavenumber": 1340,
+    "description": "COO- stretch"
+  },
+  {
+    "group": "COOH",
+    "min_wavenumber": 1320,
+    "max_wavenumber": 1210,
+    "description": "OH bend"
+  },
+  {
+    "group": "NO2",
+    "min_wavenumber": 1634,
+    "max_wavenumber": 1622,
+    "description": "Antisymmetric stretch"
+  },
+  {
+    "group": "NO2",
+    "min_wavenumber": 1560,
+    "max_wavenumber": 1550,
+    "description": "Antisymmetric stretch"
+  },
+  {
+    "group": "NO2",
+    "min_wavenumber": 1555,
+    "max_wavenumber": 1550,
+    "description": "Antisymmetric stretch"
+  },
+  {
+    "group": "NO2",
+    "min_wavenumber": 1545,
+    "max_wavenumber": 1535,
+    "description": "Antisymmetric stretch"
+  },
+  {
+    "group": "NO2",
+    "min_wavenumber": 1395,
+    "max_wavenumber": 1380,
+    "description": "Symmetric stretch"
+  },
+  {
+    "group": "NO2",
+    "min_wavenumber": 1375,
+    "max_wavenumber": 1360,
+    "description": "Symmetric stretch"
+  },
+  {
+    "group": "NO2",
+    "min_wavenumber": 1355,
+    "max_wavenumber": 1345,
+    "description": "Symmetric stretch"
+  },
+  {
+    "group": "NO2",
+    "min_wavenumber": 1282,
+    "max_wavenumber": 1275,
+    "description": "Symmetric stretch"
+  },
+  {
+    "group": "C≡N",
+    "min_wavenumber": 2161,
+    "max_wavenumber": 2134,
+    "description": "stretch"
+  },
+  {
+    "group": "C≡N",
+    "min_wavenumber": 2156,
+    "max_wavenumber": 2140,
+    "description": "stretch"
+  },
+  {
+    "group": "C=N",
+    "min_wavenumber": 1666,
+    "max_wavenumber": 1652,
+    "description": "stretch"
+  },
+  {
+    "group": "C=N",
+    "min_wavenumber": 1665,
+    "max_wavenumber": 1650,
+    "description": "stretch"
+  },
+  {
+    "group": "C=N",
+    "min_wavenumber": 1663,
+    "max_wavenumber": 1636,
+    "description": "Symmetric stretch"
+  },
+  {
+    "group": "C=N",
+    "min_wavenumber": 1660,
+    "max_wavenumber": 1649,
+    "description": "stretch"
+  },
+  {
+    "group": "C=N",
+    "min_wavenumber": 1660,
+    "max_wavenumber": 1610,
+    "description": "stretch"
+  },
+  {
+    "group": "SO2",
+    "min_wavenumber": 1196,
+    "max_wavenumber": 1188,
+    "description": "Symmetric stretch"
+  },
+  {
+    "group": "SO2",
+    "min_wavenumber": 1172,
+    "max_wavenumber": 1165,
+    "description": "Symmetric stretch"
+  },
+  {
+    "group": "SO2",
+    "min_wavenumber": 1145,
+    "max_wavenumber": 1125,
+    "description": "Symmetric stretch"
+  },
+  {
+    "group": "C-O",
+    "min_wavenumber": 1480,
+    "max_wavenumber": 1470,
+    "description": "OCH3/OCH2 deformation"
+  },
+  {
+    "group": "C-O",
+    "min_wavenumber": 930,
+    "max_wavenumber": 830,
+    "description": "Symmetric COC stretch"
+  },
+  {
+    "group": "C-O",
+    "min_wavenumber": 825,
+    "max_wavenumber": 820,
+    "description": "C3O skeletal stretch"
+  },
+  {
+    "group": "C-O",
+    "min_wavenumber": 760,
+    "max_wavenumber": 730,
+    "description": "C4O skeletal stretch"
+  },
+  {
+    "group": "C-S",
+    "min_wavenumber": 740,
+    "max_wavenumber": 585,
+    "description": "stretch"
+  },
+  {
+    "group": "C-S",
+    "min_wavenumber": 735,
+    "max_wavenumber": 690,
+    "description": "C=S stretch"
+  },
+  {
+    "group": "C-S",
+    "min_wavenumber": 715,
+    "max_wavenumber": 620,
+    "description": "stretch"
+  },
+  {
+    "group": "C-S",
+    "min_wavenumber": 525,
+    "max_wavenumber": 510,
+    "description": "S-S stretch"
+  },
+  {
+    "group": "C-S",
+    "min_wavenumber": 510,
+    "max_wavenumber": 480,
+    "description": "S-S stretch"
+  },
+  {
+    "group": "C-X",
+    "min_wavenumber": 730,
+    "max_wavenumber": 720,
+    "description": "C-Cl stretch"
+  },
+  {
+    "group": "C-X",
+    "min_wavenumber": 660,
+    "max_wavenumber": 650,
+    "description": "C-Cl stretch (PH)"
+  },
+  {
+    "group": "C-X",
+    "min_wavenumber": 615,
+    "max_wavenumber": 605,
+    "description": "C-Cl stretch (SHH)"
+  },
+  {
+    "group": "C-X",
+    "min_wavenumber": 570,
+    "max_wavenumber": 560,
+    "description": "C-Cl stretch (THHH)"
+  },
+  {
+    "group": "C-X",
+    "min_wavenumber": 655,
+    "max_wavenumber": 640,
+    "description": "C-Br stretch"
+  },
+  {
+    "group": "C-X",
+    "min_wavenumber": 565,
+    "max_wavenumber": 560,
+    "description": "C-Br stretch (PH)"
+  },
+  {
+    "group": "C-X",
+    "min_wavenumber": 540,
+    "max_wavenumber": 535,
+    "description": "C-Br stretch (SHH)"
+  },
+  {
+    "group": "C-X",
+    "min_wavenumber": 520,
+    "max_wavenumber": 510,
+    "description": "C-Br stretch (THHH)"
+  },
+  {
+    "group": "C-X",
+    "min_wavenumber": 610,
+    "max_wavenumber": 590,
+    "description": "C-I stretch"
+  },
+  {
+    "group": "C-X",
+    "min_wavenumber": 510,
+    "max_wavenumber": 500,
+    "description": "C-I stretch (PH)"
+  },
+  {
+    "group": "C-X",
+    "min_wavenumber": 495,
+    "max_wavenumber": 485,
+    "description": "C-I stretch (SHH/THHH)"
+  },
+  {
+    "group": "Aromatic",
+    "min_wavenumber": 3100,
+    "max_wavenumber": 3000,
+    "description": "CH stretch"
+  },
+  {
+    "group": "Aromatic",
+    "min_wavenumber": 1630,
+    "max_wavenumber": 1550,
+    "description": "Ring stretches"
+  },
+  {
+    "group": "Aromatic",
+    "min_wavenumber": 1230,
+    "max_wavenumber": 1200,
+    "description": "Ring vibration"
+  },
+  {
+    "group": "Aromatic",
+    "min_wavenumber": 1060,
+    "max_wavenumber": 1020,
+    "description": "Ring vibration"
+  },
+  {
+    "group": "Aromatic",
+    "min_wavenumber": 1030,
+    "max_wavenumber": 1015,
+    "description": "In-plane CH deformation"
+  },
+  {
+    "group": "Aromatic",
+    "min_wavenumber": 1010,
+    "max_wavenumber": 990,
+    "description": "Trigonal ring breathing"
+  },
+  {
+    "group": "Aromatic",
+    "min_wavenumber": 830,
+    "max_wavenumber": 720,
+    "description": "Ring vibration"
+  },
+  {
+    "group": "Aromatic",
+    "min_wavenumber": 630,
+    "max_wavenumber": 615,
+    "description": "Ring deformation"
+  }
+]
