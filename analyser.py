@@ -18,7 +18,7 @@ import google.generativeai as genai
 
 # --- SET PAGE CONFIG FIRST ---
 # This line MUST be the very first Streamlit command in your script.
-st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded", icon="�")
+st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded")
 
 # ------------------------ Utility Functions ------------------------
 def despike_spectrum(intensities: np.ndarray) -> np.ndarray:
