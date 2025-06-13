@@ -164,7 +164,7 @@ class RamanAnalyzer:
             except Exception as e:
                 st.warning(f"Could not load ML model from '{os.path.basename(model_path)}': {e}. A new (untrained) model will be used.")
         else:
-            st.toast("No pre-trained ML model found or path invalid. A new (untrained) model will be used.")
+            st.info("No pre-trained ML model found or path invalid. A new (untrained) model will be used.")
 
         self.identifier = MolecularIdentifier()
         self.database = self._load_json_data(json_paths, is_compound_db=True) # Load compound database
@@ -200,7 +200,7 @@ class RamanAnalyzer:
                     response = requests.get(path)
                     response.raise_for_status()
                     data = response.json()
-                    #st.toast(f"✅ Loaded {'compound' if is_compound_db else 'functional group'} data from URL: {path}")
+                    #st.info(f"✅ Loaded {'compound' if is_compound_db else 'functional group'} data from URL: {path}")
                 else:
                     if not os.path.isabs(path):
                         script_dir = os.path.dirname(os.path.abspath(__file__))
