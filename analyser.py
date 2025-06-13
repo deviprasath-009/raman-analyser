@@ -160,11 +160,11 @@ class RamanAnalyzer:
         if model_path and os.path.exists(model_path):
             try:
                 self.model = joblib.load(model_path)
-                st.info(f"ML model loaded successfully from '{os.path.basename(model_path)}'.")
+                st.toast(f"ML model loaded successfully from '{os.path.basename(model_path)}'.")
             except Exception as e:
                 st.warning(f"Could not load ML model from '{os.path.basename(model_path)}': {e}. A new (untrained) model will be used.")
         else:
-            st.info("No pre-trained ML model found or path invalid. A new (untrained) model will be used.")
+            st.toast("No pre-trained ML model found or path invalid. A new (untrained) model will be used.")
 
         self.identifier = MolecularIdentifier()
         self.database = self._load_json_data(json_paths, is_compound_db=True) # Load compound database
