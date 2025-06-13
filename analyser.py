@@ -200,7 +200,7 @@ class RamanAnalyzer:
                     response = requests.get(path)
                     response.raise_for_status()
                     data = response.json()
-                    #st.success(f"✅ Loaded {'compound' if is_compound_db else 'functional group'} data from URL: {path}")
+                    #st.toast(f"✅ Loaded {'compound' if is_compound_db else 'functional group'} data from URL: {path}")
                 else:
                     if not os.path.isabs(path):
                         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -211,7 +211,7 @@ class RamanAnalyzer:
                     if os.path.exists(full_path):
                         with open(full_path, 'r', encoding='utf-8') as f: # Use utf-8 encoding
                             data = json.load(f)
-                        st.success(f"✅ Loaded {'compound' if is_compound_db else 'functional group'} data from file: {os.path.basename(path)}")
+                        st.toast(f"✅ Loaded {'compound' if is_compound_db else 'functional group'} data from file: {os.path.basename(path)}")
                     else:
                         st.warning(f"⚠️ {'Compound' if is_compound_db else 'Functional group'} file not found at: {full_path}")
                         continue
@@ -465,7 +465,7 @@ def get_analyzer_instance(json_db_paths: List[str], ml_model_path: str = None,
 
     try:
         genai.configure(api_key=gemini_api_key)
-        st.success("Google Gemini API configured successfully.")
+        st.toast("Google Gemini API configured successfully.")
     except Exception as e:
         st.error(f"Error configuring Google Gemini API: {e}. AI summary generation will not work.")
         st.stop() # Critical error, stop app.
