@@ -137,7 +137,8 @@ class MolecularIdentifier:
 # ------------------------ Analyzer Core ------------------------
 class RamanAnalyzer:
     """Core class for performing Raman spectrum analysis, including ML and AI generation."""
-    def __init__(self, json_paths: List[str] = None, model_path: str = None, gemini_model_name: str = "gemini-pro"):
+    def __init__(self, json_paths: List[str] = None, model_path: str = None, 
+                 gemini_model_name: str = "gemini-pro", gemini_api_key: str = None): # Added gemini_api_key
         self.loading_messages = []
 
         self.model = Pipeline([('scaler', StandardScaler()), ('mlp', MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=1000, random_state=42))])
@@ -154,11 +155,17 @@ class RamanAnalyzer:
         self.database, db_messages = self._load_databases(json_paths)
         self.loading_messages.extend(db_messages)
             
-        try:
-            self.ai_generator_model = genai.GenerativeModel(gemini_model_name)
-        except Exception as e:
-            self.ai_generator_model = None
-            self.loading_messages.append(f"AI_ERROR: Failed to load AI model '{gemini_model_name}': {e}. AI summary generation will not work.")
+        self.ai_generator_model = None
+        if gemini_api_key: # Check if API key is provided
+            try:
+                genai.configure(api_key=gemini_api_key)
+                self.ai_generator_model = genai.GenerativeModel(gemini_model_name)
+                self.loading_messages.append("API_INFO: Google Gemini API configured successfully.")
+            except Exception as e:
+                self.loading_messages.append(f"AI_ERROR: Failed to load AI model '{gemini_model_name}' or configure API: {e}. AI summary generation will not work.")
+        else:
+            self.loading_messages.append("API_ERROR: GEMINI_API_KEY not provided. AI summary generation will not work.")
+
 
     def _load_databases(self, paths: List[str]) -> Tuple[Dict, List[str]]:
         """Loads Raman spectral databases from JSON files or URLs and returns status messages."""
@@ -310,7 +317,7 @@ class RamanAnalyzer:
         return fig
 
 @st.cache_resource
-def get_analyzer_instance(json_db_paths: List[str], ml_model_path: str = None) -> Tuple[RamanAnalyzer, List[str]]:
+def get_analyzer_instance(json_db_paths: List[str], ml_model_path: str = None, gemini_api_key: str = None) -> Tuple[RamanAnalyzer, List[str]]: # Added gemini_api_key
     """
     Initializes and caches the RamanAnalyzer instance.
     Handles API key retrieval and Gemini configuration here, preventing early Streamlit errors.
@@ -318,20 +325,11 @@ def get_analyzer_instance(json_db_paths: List[str], ml_model_path: str = None) -
     """
     setup_messages = []
 
-    gemini_api_key = st.secrets.get("GEMINI_API_KEY")
-    
-    if not gemini_api_key:
-        setup_messages.append("API_ERROR: GEMINI_API_KEY not found. Please set it in Streamlit secrets (`.streamlit/secrets.toml`) or as an environment variable.")
-    else:
-        try:
-            genai.configure(api_key=gemini_api_key)
-            setup_messages.append("API_INFO: Google Gemini API configured successfully.")
-        except Exception as e:
-            setup_messages.append(f"API_ERROR: Error configuring Google Gemini API: {e}. AI summary generation will not work.")
-
+    # genai.configure is now handled within the RamanAnalyzer constructor
+    # based on the provided gemini_api_key
     gemini_model_name_for_analyzer = "gemini-2.0-flash"
 
-    analyzer = RamanAnalyzer(json_db_paths, ml_model_path, gemini_model_name=gemini_model_name_for_analyzer)
+    analyzer = RamanAnalyzer(json_db_paths, ml_model_path, gemini_model_name=gemini_model_name_for_analyzer, gemini_api_key=gemini_api_key) # Pass the API key
     setup_messages.extend(analyzer.loading_messages)
 
     return analyzer, setup_messages
@@ -376,7 +374,7 @@ def fetch_pubchem_data(compound_name: str) -> Dict[str, Any]:
     description_url = f"{base_url}/compound/cid/{cid}/description/JSON"
     try:
         response = requests.get(description_url, timeout=10)
-        response.raise_for_status()
+        response.raise_status()
         desc_data = response.json()
         description_sections = desc_data.get("InformationList", {}).get("Information", [])
         for info_item in description_sections:
@@ -414,7 +412,10 @@ def main():
     
     DB_JSON_PATHS = [GITHUB_DB_URL, LOCAL_DB_PATH]
 
-    analyzer, setup_messages = get_analyzer_instance(DB_JSON_PATHS, ML_MODEL_PATH)
+    # Retrieve API key BEFORE calling the cached function
+    gemini_api_key = st.secrets.get("GEMINI_API_KEY")
+
+    analyzer, setup_messages = get_analyzer_instance(DB_JSON_PATHS, ML_MODEL_PATH, gemini_api_key)
 
     # --- Display setup messages in a collapsible expander ---
     # Determine if any important messages (warnings/errors) exist to decide default expander state
