@@ -11,19 +11,19 @@ import streamlit as st
 import json
 import joblib
 import os
-from urllib.parse import urlparse # Imported but not used in the final provided code
 import requests
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 
 # Import for Google Generative AI
 import google.generativeai as genai
 
 # --- SET PAGE CONFIG FIRST ---
 # This line MUST be the very first Streamlit command in your script.
-st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="AI Raman Analyzer", layout="wide", initial_sidebar_state="expanded", icon="🔬")
 
-# --- Configuration for Google Gemini API and Model (handled within get_analyzer_instance) ---
-# The previous global API key setup is REMOVED from here to prevent early initialization errors.
+# --- Configuration for Google Gemini API and Model ---
+# API key retrieval and genai.configure are now handled within get_analyzer_instance
+# to ensure Streamlit's environment is fully initialized.
 
 
 # ------------------------ Utility Functions ------------------------
@@ -33,8 +33,8 @@ def despike_spectrum(intensities: np.ndarray) -> np.ndarray:
 
 def detect_peaks(wavenumbers: np.ndarray, intensities: np.ndarray) -> np.ndarray:
     """Detects peaks in the spectrum based on prominence."""
-    prominence = np.std(intensities) * 0.5
-    peaks, _ = find_peaks(intensities, prominence=prominence, distance=10)
+    prominence = np.std(intensities) * 0.5 # Prominence based on standard deviation
+    peaks, _ = find_peaks(intensities, prominence=prominence, distance=10) # Minimum distance between peaks
     return wavenumbers[peaks], intensities[peaks]
 
 # ------------------------ Expert Interpreter ------------------------
@@ -70,6 +70,7 @@ class ExpertInterpreter:
 
     def _assign_groups(self):
         """Assigns common functional groups based on peak positions."""
+        # Note: Peak ranges and assignments are simplified for demonstration
         for peak in self.peaks:
             if 1600 <= peak <= 1800:
                 self.functional_groups.append(("C=O Stretch", peak))
@@ -123,7 +124,7 @@ class MolecularIdentifier:
                         for obs_peak in peaks:
                             if abs(obs_peak - ref_wavenumber) <= self.tolerance:
                                 matched_count += 1
-                                break
+                                break # Move to the next ref_peak once a match is found
                 if matched_count >= self.min_matches:
                     matches.append({
                         "Compound": compound.get("Name", "Unknown"),
@@ -155,11 +156,8 @@ class RamanAnalyzer:
         # Initialize Google Generative AI model using the passed model name
         try:
             self.ai_generator_model = genai.GenerativeModel(gemini_model_name)
-            # No st.success here, as configuration success is handled in get_analyzer_instance
         except Exception as e:
-            # Error handling is primarily in get_analyzer_instance.
-            # This 'except' block just ensures self.ai_generator_model is None if it fails.
-            self.ai_generator_model = None
+            self.ai_generator_model = None # Set to None if model loading fails
 
     def _load_databases(self, paths: List[str]) -> Dict:
         """Loads Raman spectral databases from JSON files or URLs."""
@@ -173,7 +171,7 @@ class RamanAnalyzer:
                 # Load from URL or local file
                 if path.startswith(('http://', 'https://')):
                     response = requests.get(path)
-                    response.raise_for_status()
+                    response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
                     data = response.json()
                     st.success(f"✅ Loaded database from URL: {path}")
                 else:
@@ -185,23 +183,24 @@ class RamanAnalyzer:
                         full_path = path
 
                     if os.path.exists(full_path):
-                        with open(full_path, 'r', encoding='utf-8') as f:
+                        with open(full_path, 'r', encoding='utf-8') as f: # Use utf-8 encoding
                             data = json.load(f)
                         st.success(f"✅ Loaded database from file: {os.path.basename(path)}")
                     else:
                         st.warning(f"⚠️ Database file not found at: {full_path}")
                         continue
 
-                # Flexible structure handling
+                # Flexible structure handling: If the JSON is a list (like "raman data 1 .json"),
+                # it's wrapped under an "Uncategorized" key.
                 if isinstance(data, dict):
                     for category, compounds in data.items():
                         if isinstance(compounds, list):
                             db.setdefault(category, []).extend(compounds)
                         else:
-                            st.warning(f"⚠️ Category '{category}' is not a list, skipping.")
+                            st.warning(f"⚠️ Category '{category}' in {path} is not a list, skipping.")
                 elif isinstance(data, list):
                     db.setdefault("Uncategorized", []).extend(data)
-                    st.warning("⚠️ JSON file is a list. Wrapped under 'Uncategorized'.")
+                    st.warning(f"⚠️ JSON file {os.path.basename(path)} is a list. Wrapped under 'Uncategorized'.")
                 else:
                     st.error(f"❌ Unsupported JSON structure in {path}. Skipped.")
 
@@ -226,7 +225,7 @@ class RamanAnalyzer:
         
         return {
             "peaks": peaks,
-            "intensities": peak_intensities,
+            "peak_intensities": peak_intensities, # Store detected peak intensities
             "functional_groups": interpretation["functional_groups"],
             "diagnostics": interpretation["diagnostics"],
             "compound_suggestions": suggestions,
@@ -244,7 +243,9 @@ class RamanAnalyzer:
             response = self.ai_generator_model.generate_content(prompt)
             summary = response.text.strip()
             
+            # Basic cleaning
             clean_summary = summary.replace(prompt, "").strip()
+            # Truncate if too long and ends with a sentence, or just truncate and add ellipsis
             if len(clean_summary) > 150 and '.' in clean_summary[:150]:
                 clean_summary = clean_summary.rsplit('.', 1)[0] + '.'
             elif len(clean_summary) > 150:
@@ -254,31 +255,67 @@ class RamanAnalyzer:
         except Exception as e:
             return f"AI summary generation failed: {e}. Please check your API key, model access, and prompt."
 
-    def visualize(self, wavenumbers: np.ndarray, intensities: np.ndarray, peaks: np.ndarray):
-        """Generates a matplotlib plot of the Raman spectrum with detected peaks."""
+    # Modified visualize to handle multiple spectra for overlay or stacked plots
+    def visualize(self, spectra_data: List[Dict[str, Any]], plot_type: str = "overlay"):
+        """
+        Generates a matplotlib plot of one or more Raman spectra.
+        spectra_data: List of dicts, each containing 'wavenumbers', 'intensities', 'peaks', 'label'.
+        plot_type: 'overlay' or 'stacked'.
+        """
         plt.style.use('seaborn-v0_8-darkgrid')
 
-        fig, ax = plt.subplots(figsize=(5, 5))
-        ax.plot(wavenumbers, intensities, label='Spectrum', color='#1f77b4', linewidth=1.5)
-        
-        peak_indices = np.searchsorted(wavenumbers, peaks)
-        peak_indices = peak_indices[(peak_indices >= 0) & (peak_indices < len(wavenumbers))]
-        
-        ax.scatter(peaks, intensities[peak_indices],
-                    color='red', s=50, zorder=5, label='Detected Peaks', edgecolor='k', alpha=0.8)
+        if plot_type == "overlay":
+            fig, ax = plt.subplots(figsize=(10, 5))
+            ax.set_title("Raman Spectra Overlay", fontsize=16, pad=15)
+            for i, data in enumerate(spectra_data):
+                color = plt.cm.get_cmap('viridis', len(spectra_data))(i) # Get a distinct color
+                ax.plot(data['wavenumbers'], data['intensities'], label=data['label'], color=color, linewidth=1.5)
+                # Plot detected peaks
+                peak_indices = np.searchsorted(data['wavenumbers'], data['peaks'])
+                peak_indices = peak_indices[(peak_indices >= 0) & (peak_indices < len(data['wavenumbers']))]
+                ax.scatter(data['peaks'], data['intensities'][peak_indices],
+                           color=color, s=50, zorder=5, edgecolor='k', alpha=0.8)
+            ax.legend(loc='best', fontsize=10)
+            ax.set_ylabel("Intensity (Arb. Units)", fontsize=12)
 
-        ax.set_title("Raman Spectrum", fontsize=16, pad=15)
-        ax.set_xlabel("Raman Shift (cm⁻¹)", fontsize=12)
-        ax.set_ylabel("Intensity (Arb. Units)", fontsize=12)
-        
-        ax.invert_xaxis()
+        elif plot_type == "stacked":
+            nrows = len(spectra_data)
+            fig, axes = plt.subplots(nrows=nrows, figsize=(10, 2 * nrows), sharex=True)
+            if nrows == 1: # Handle single subplot case
+                axes = [axes]
 
-        ax.legend(loc='best', fontsize=10)
-        ax.grid(True, linestyle='--', alpha=0.6)
-        
-        ax.tick_params(axis='both', which='major', labelsize=10)
+            fig.suptitle("Raman Spectra Stacked View", fontsize=16, y=1.02) # Adjusted title position
+            
+            # Calculate offsets for better visibility in stacked plot
+            max_intensity_overall = max(np.max(d['intensities']) for d in spectra_data)
+            offset_factor = max_intensity_overall * 1.2 # Adjust this multiplier for more/less spacing
+
+            for i, data in enumerate(spectra_data):
+                ax = axes[i]
+                current_offset = i * offset_factor # Simple linear offset
+                
+                # Apply offset to intensities for stacked view
+                ax.plot(data['wavenumbers'], data['intensities'] + current_offset, 
+                        label=data['label'], color='#1f77b4', linewidth=1.5)
+                
+                # Plot detected peaks with offset
+                peak_indices = np.searchsorted(data['wavenumbers'], data['peaks'])
+                peak_indices = peak_indices[(peak_indices >= 0) & (peak_indices < len(data['wavenumbers']))]
+                ax.scatter(data['peaks'], data['intensities'][peak_indices] + current_offset,
+                           color='red', s=50, zorder=5, edgecolor='k', alpha=0.8)
+                
+                ax.set_ylabel(data['label'], fontsize=10) # Label each subplot with its spectrum name
+                ax.set_yticks([]) # Hide y-axis ticks for cleaner look in stacked view
+                ax.tick_params(axis='both', which='major', labelsize=10)
+                ax.grid(True, linestyle='--', alpha=0.6)
+                
+            # Only set common xlabel for the last subplot
+            axes[-1].set_xlabel("Raman Shift (cm⁻¹)", fontsize=12)
+
+        ax.invert_xaxis() # Invert x-axis for Raman spectra
 
         plt.tight_layout()
+        plt.subplots_adjust(top=0.95) # Adjust spacing for suptitle
         return fig
 
 # Instantiate Analyzer Core once using st.cache_resource
@@ -286,26 +323,23 @@ class RamanAnalyzer:
 def get_analyzer_instance(json_db_paths: List[str], ml_model_path: str = None) -> RamanAnalyzer:
     """
     Initializes and caches the RamanAnalyzer instance.
-    Handles API key retrieval and Gemini configuration here.
+    Handles API key retrieval and Gemini configuration here, preventing early Streamlit errors.
     """
     # --- API Key retrieval and Gemini configuration moved HERE ---
-    # For Streamlit Cloud, st.secrets.get is the primary method.
     gemini_api_key = st.secrets.get("GEMINI_API_KEY") 
     
     if not gemini_api_key:
-        st.error("GEMINI_API_KEY not found. Please set it in Streamlit secrets.")
+        st.error("GEMINI_API_KEY not found. Please set it in Streamlit secrets (`.streamlit/secrets.toml`) or as an environment variable.")
         st.stop() # This will stop the app if the key is not found
 
     try:
         genai.configure(api_key=gemini_api_key)
-        st.success("Google Gemini API configured successfully for the analyzer.")
+        st.success("Google Gemini API configured successfully.")
     except Exception as e:
         st.error(f"Error configuring Google Gemini API: {e}. AI summary generation will not work.")
-        # Optionally, you might want to stop the app here too, or just disable AI features.
-        # st.stop()
+        st.stop() # Critical error, stop app.
 
-    # Define the model name after API key configuration
-    # Set this to "gemini-2.0-flash" as that worked with curl
+    # Define the model name here, after API key configuration
     gemini_model_name_for_analyzer = "gemini-2.0-flash" 
 
     # Now, initialize RamanAnalyzer, passing the configured model name
@@ -333,7 +367,7 @@ def fetch_pubchem_data(compound_name: str) -> Dict[str, Any]:
     except json.JSONDecodeError:
         return {"error": f"Could not decode JSON from PubChem CID response for '{compound_name}'."}
 
-    # 2. Get properties
+    # 2. Get properties (MolecularFormula, IUPACName, CanonicalSMILES)
     properties_url = f"{base_url}/compound/cid/{cid}/property/MolecularFormula,IUPACName,CanonicalSMILES/JSON"
     properties = {}
     try:
@@ -343,7 +377,7 @@ def fetch_pubchem_data(compound_name: str) -> Dict[str, Any]:
         props_list = prop_data.get("PropertyTable", {}).get("Properties")
         if props_list:
             properties = props_list[0]
-            properties.pop('CID', None)
+            properties.pop('CID', None) # Remove CID from properties if it's there
     except requests.exceptions.RequestException as e:
         properties["error"] = f"Error fetching properties: {e}"
     except json.JSONDecodeError:
@@ -383,34 +417,37 @@ def main():
     st.title("rudra's Raman Analyzer")
     st.markdown("---")
 
-    # Get current script directory
+    # Get current script directory for local file paths
     script_directory = os.path.dirname(os.path.abspath(__file__))
     
-    # Database configuration - use GitHub URL
-    GITHUB_DB_URL = "https://raw.githubusercontent.com/deviprasath-009/raman-analyser/refs/heads/main/data/up.json"
+    # Database configuration - use GitHub URL for remote access
+    # This URL should point to the raw content of your JSON database on GitHub
+    # Make sure 'main' is the correct branch and 'data/up.json' is the correct path in your repo
+    GITHUB_DB_URL = "https://raw.githubusercontent.com/deviprasath-009/raman-analyser/main/data/up.json"
     
-    # Local fallback path (if needed) - ensure this path is correct if used locally
-    # LOCAL_DB_PATH = os.path.join(script_directory, "raman_database.json")
-    
-    # Model path
+    # Local fallback path (if needed) - provide your local path here if you have a local copy
+    # For 'raman data 1 .json' from your previous example, it would be:
+    LOCAL_DB_PATH = os.path.join(script_directory, "raman data 1 .json") # Ensure this file exists if you use it
+
+    # Model path for your ML model (e.g., trained MLP classifier)
     ML_MODEL_PATH = os.path.join(script_directory, "raman_mlp_model.joblib")
     
-    # Use GitHub URL as primary for the database
-    DB_JSON_PATHS = [GITHUB_DB_URL]
-    
-    # Initialize the analyzer instance, which now handles API key setup
+    # Use GitHub URL as primary for the database. If that fails, consider a local path if applicable.
+    DB_JSON_PATHS = [GITHUB_DB_URL, LOCAL_DB_PATH] # Can list multiple paths, _load_databases will try them
+
+    # Initialize the analyzer instance. This now handles API key and Gemini model setup.
     analyzer = get_analyzer_instance(DB_JSON_PATHS, ML_MODEL_PATH)
 
     st.sidebar.header("📂 Data & Sample Information")
 
-    uploaded_file = st.sidebar.file_uploader(
-        "Upload Raman Spectrum (CSV)", 
+    uploaded_files = st.sidebar.file_uploader(
+        "Upload Raman Spectrum(s) (CSV)", 
         type=["csv"], 
-        help="Upload a two-column CSV file where the first column is Wavenumber (cm⁻¹) and the second is Intensity (Arb. Units).",
-        accept_multiple_files=False
+        help="Upload one or more two-column CSV files (Wavenumber, Intensity) OR single CSV with multiple intensity columns.",
+        accept_multiple_files=True # <--- Allow multiple files
     )
 
-    st.sidebar.subheader("🧪 Sample Metadata")
+    st.sidebar.subheader("🧪 Sample Metadata (Applies to all uploaded files)")
     excitation = st.sidebar.selectbox(
         "Excitation Wavelength", 
         ["UV", "Visible", "NIR"], 
@@ -461,84 +498,151 @@ def main():
         help="Set the signal integration time per data point."
     )
 
-    if uploaded_file:
-        with st.status("Processing spectrum and running analysis...", expanded=True) as status:
-            try:
-                status.write("Reading uploaded CSV file...")
-                df = pd.read_csv(uploaded_file)
+    if uploaded_files:
+        all_processed_spectra = [] # To store data for plotting (wavenumbers, intensities, peaks, label)
+        all_compound_suggestions = {} # To aggregate compound suggestions
+        all_functional_groups = [] # To aggregate functional groups
+        all_diagnostics = [] # To aggregate diagnostics
+
+        with st.status("Processing spectrum(s) and running analysis...", expanded=True) as status:
+            meta = {
+                "excitation": excitation,
+                "sample_state": sample_state,
+                "origin": sample_origin,
+                "crystalline": crystalline,
+                "polarized": polarized,
+                "laser_power": laser_power,
+                "integration_time": integration_time
+            }
+
+            for file_idx, uploaded_file in enumerate(uploaded_files):
+                st.write(f"Processing file {file_idx + 1}: {uploaded_file.name}")
+                try:
+                    df = pd.read_csv(uploaded_file)
+                    
+                    if df.shape[1] < 2:
+                        st.warning(f"Skipping {uploaded_file.name}: Invalid CSV format. Requires at least two columns.")
+                        continue
+                    
+                    wavenumbers = df.iloc[:, 0].values
+
+                    # Handle multi-column CSVs
+                    intensity_columns_count = df.shape[1] - 1
+                    for col_idx in range(intensity_columns_count):
+                        intensity_label = f"{uploaded_file.name} - Spectrum {col_idx + 1}"
+                        intensities = df.iloc[:, col_idx + 1].values
+
+                        status.write(f"Analyzing {intensity_label}...")
+                        results = analyzer.analyze(wavenumbers, intensities, meta)
+                        
+                        all_processed_spectra.append({
+                            'wavenumbers': results['processed_wavenumbers'],
+                            'intensities': results['processed_intensities'],
+                            'peaks': results['peaks'],
+                            'label': intensity_label
+                        })
+
+                        # Aggregate results
+                        for diag in results['diagnostics']:
+                            if diag not in all_diagnostics:
+                                all_diagnostics.append(diag)
+                        for fg_name, fg_peak in results['functional_groups']:
+                            if (fg_name, fg_peak) not in all_functional_groups:
+                                all_functional_groups.append((fg_name, fg_peak))
+                        
+                        for suggestion in results['compound_suggestions']:
+                            compound_name = suggestion['Compound']
+                            if compound_name not in all_compound_suggestions:
+                                all_compound_suggestions[compound_name] = {
+                                    'Group': suggestion['Group'],
+                                    'Total Matched Peaks': suggestion['Matched Peaks Count'],
+                                    'Occurrences': 1,
+                                    'Source Spectra': [intensity_label]
+                                }
+                            else:
+                                all_compound_suggestions[compound_name]['Total Matched Peaks'] += suggestion['Matched Peaks Count']
+                                all_compound_suggestions[compound_name]['Occurrences'] += 1
+                                if intensity_label not in all_compound_suggestions[compound_name]['Source Spectra']:
+                                    all_compound_suggestions[compound_name]['Source Spectra'].append(intensity_label)
+
+                except Exception as e:
+                    st.error(f"An error occurred processing {uploaded_file.name}: {e}")
+                    st.exception(e) # Show full traceback for debugging
+
+            status.update(label="Analysis complete!", state="complete", expanded=False)
+            st.success("Analysis successfully completed for all uploaded spectra!")
+
+            st.subheader("📈 Raman Spectra Visualization")
+            plot_type = st.radio("Select Plot Type:", ("Overlay View", "Stacked View"), horizontal=True)
+            
+            if all_processed_spectra:
+                st.pyplot(analyzer.visualize(all_processed_spectra, plot_type.split()[0].lower()), use_container_width=True)
+            else:
+                st.warning("No valid spectra were processed for visualization.")
+            st.markdown("---")
+
+            st.subheader("📊 Consolidated Analysis Results")
+
+            st.markdown("#### 🔍 Diagnostics from All Spectra")
+            if all_diagnostics:
+                for d in all_diagnostics:
+                    st.info(f"- {d}") 
+            else:
+                st.info("No specific diagnostics identified across all spectra based on expert rules.")
+            st.markdown("---")
+
+            st.markdown("#### 📚 Functional Groups Identified Across All Spectra")
+            if all_functional_groups:
+                for name, peak in sorted(all_functional_groups, key=lambda x: x[1]): # Sort by peak for readability
+                    st.success(f"- **{name}** at {peak:.1f} cm⁻¹") 
+            else:
+                st.info("No common functional groups detected across all spectra based on expert rules.")
+            st.markdown("---")
+
+            st.markdown("#### 🧪 Top Compound Suggestions (Aggregated)")
+            if not all_compound_suggestions:
+                st.warning("No matching compounds found in the loaded database with the given tolerance and minimum peak matches for any spectrum.")
+                st.info("Consider adjusting the 'tolerance' or 'min_matches' parameters in the MolecularIdentifier class if you expect matches.")
+            else:
+                # Convert aggregated suggestions to a DataFrame for display
+                agg_suggestions_list = []
+                for compound, details in all_compound_suggestions.items():
+                    agg_suggestions_list.append({
+                        "Compound": compound,
+                        "Group": details['Group'],
+                        "Total Matched Peaks": details['Total Matched Peaks'],
+                        "Occurrences Across Spectra": details['Occurrences'],
+                        "Source Spectra": ", ".join(details['Source Spectra'])
+                    })
                 
-                if df.shape[1] < 2:
-                    status.error("Invalid CSV format. Please ensure your file has at least two columns (Wavenumber, Intensity).")
-                    st.error("Please upload a valid CSV file with at least two columns.")
-                    status.update(label="Analysis failed!", state="error", expanded=False)
-                    return
-                
-                wavenumbers = df.iloc[:, 0].values
-                intensities = df.iloc[:, 1].values
+                # Sort by occurrences and then total matched peaks for higher confidence first
+                df_agg_match = pd.DataFrame(agg_suggestions_list).sort_values(
+                    by=["Occurrences Across Spectra", "Total Matched Peaks"], 
+                    ascending=[False, False]
+                ).reset_index(drop=True)
+                st.dataframe(df_agg_match, use_container_width=True, hide_index=True)
 
-                meta = {
-                    "excitation": excitation,
-                    "sample_state": sample_state,
-                    "origin": sample_origin,
-                    "crystalline": crystalline,
-                    "polarized": polarized,
-                    "laser_power": laser_power,
-                    "integration_time": integration_time
-                }
-                
-                status.write("Performing Raman analysis (despiking, peak detection, expert interpretation)...")
-                results = analyzer.analyze(wavenumbers, intensities, meta)
-                
-                status.update(label="Analysis complete!", state="complete", expanded=False)
-                st.success("Analysis successfully completed!")
-
-                st.subheader("📈 Raman Spectrum Visualization")
-                st.pyplot(analyzer.visualize(results["processed_wavenumbers"], results["processed_intensities"], results["peaks"]), use_container_width=True)
-                st.markdown("---")
-
-                st.subheader("📊 Analysis Results")
-
-                st.markdown("#### 🔍 Diagnostics")
-                if results["diagnostics"]:
-                    for d in results["diagnostics"]:
-                        st.info(f"- {d}") 
-                else:
-                    st.info("No specific diagnostics identified for this spectrum based on expert rules.")
-                st.markdown("---")
-
-                st.markdown("#### 📚 Functional Groups Identified")
-                if results["functional_groups"]:
-                    for name, peak in results["functional_groups"]:
-                        st.success(f"- **{name}** at {peak:.1f} cm⁻¹") 
-                else:
-                    st.info("No common functional groups detected based on expert rules.")
-                st.markdown("---")
-
-                st.markdown("#### 🧪 Top Compound Suggestions from Database")
-                if not results["compound_suggestions"]:
-                    st.warning("No matching compounds found in the loaded database with the given tolerance and minimum peak matches.")
-                    st.info("Consider adjusting the 'tolerance' or 'min_matches' parameters in the MolecularIdentifier class if you expect matches.")
-                else:
-                    df_match = pd.DataFrame(results["compound_suggestions"])
-                    st.dataframe(df_match, use_container_width=True, hide_index=True)
-
-                    top_match = results["compound_suggestions"][0]
-                    st.markdown("#### 🧠 AI-Generated Summary for Top Match")
+                # AI Summary for the highest confidence compound
+                if not df_agg_match.empty:
+                    top_match_compound = df_agg_match.iloc[0]["Compound"]
+                    top_match_group = df_agg_match.iloc[0]["Group"]
+                    st.markdown("#### 🧠 AI-Generated Summary for Highest Confidence Compound")
                     if analyzer.ai_generator_model:
-                        with st.spinner(f"Generating AI summary for {top_match['Compound']} using gemini-2.0-flash..."): # Hardcoded model name for display
-                            ai_summary = analyzer.generate_summary(top_match['Compound'], top_match['Group'])
+                        with st.spinner(f"Generating AI summary for {top_match_compound} using gemini-2.0-flash..."):
+                            ai_summary = analyzer.generate_summary(top_match_compound, top_match_group)
                         st.markdown(ai_summary)
                     else:
                         st.warning("AI summary generation skipped because the model could not be loaded.")
 
-                    # --- PubChem Details Integration ---
-                    st.markdown("#### 🌐 Fetch Details from PubChem (Top Match)")
-                    if st.button(f"Get PubChem Details for {top_match['Compound']}"):
-                        pubchem_info = fetch_pubchem_data(top_match['Compound'])
+                # PubChem Details for the highest confidence compound
+                if not df_agg_match.empty:
+                    st.markdown("#### 🌐 Fetch Details from PubChem (Highest Confidence Compound)")
+                    if st.button(f"Get PubChem Details for {top_match_compound}"):
+                        pubchem_info = fetch_pubchem_data(top_match_compound)
                         if "error" in pubchem_info:
                             st.error(pubchem_info["error"])
                         else:
-                            with st.expander(f"**Details for {top_match['Compound']} (CID: {pubchem_info.get('cid', 'N/A')})**", expanded=True):
+                            with st.expander(f"**Details for {top_match_compound} (CID: {pubchem_info.get('cid', 'N/A')})**", expanded=True):
                                 st.markdown(f"**Molecular Formula:** {pubchem_info['properties'].get('MolecularFormula', 'N/A')}")
                                 st.markdown(f"**IUPAC Name:** {pubchem_info['properties'].get('IUPACName', 'N/A')}")
                                 st.markdown(f"**Canonical SMILES:** `{pubchem_info['properties'].get('CanonicalSMILES', 'N/A')}`")
@@ -548,28 +652,26 @@ def main():
                                 st.markdown(f"[View on PubChem](https://pubchem.ncbi.nlm.nih.gov/compound/{pubchem_info.get('cid')})")
                     st.markdown("---")
 
-            except Exception as e:
-                status.error(f"An error occurred during analysis: {e}")
-                st.error(f"Failed to process the spectrum. Error: {e}")
-                st.exception(e)
-                status.update(label="Analysis failed!", state="error", expanded=False)
-
     else:
-        st.info("Please upload a Raman spectrum CSV file to begin analysis.")
+        st.info("Please upload one or more Raman spectrum CSV files to begin analysis.")
         st.markdown("""
         **Getting Started:**
-        1.  **Upload your Raman spectrum data** as a two-column CSV (Wavenumber, Intensity) using the uploader in the sidebar.
-        2.  **Adjust the sample metadata** and measurement parameters in the sidebar.
+        1.  **Upload your Raman spectrum data** as one or more CSV files. Each CSV can have:
+            * Two columns (Wavenumber, Intensity) for a single spectrum.
+            * Multiple columns (1st column Wavenumber, subsequent columns as individual Intensity spectra).
+        2.  **Adjust the sample metadata** and measurement parameters in the sidebar. These apply to all uploaded spectra.
         3.  The analysis results, including functional groups, compound suggestions, and an AI summary, will appear here.
         """)
         st.markdown("---")
         st.subheader("App Features:")
         st.markdown("""
-        -   **Automated Pre-processing:** Despiking and peak detection.
-        -   **Expert Rules:** Identifies common functional groups and provides diagnostic insights.
-        -   **Database Matching:** Suggests compounds by comparing your spectrum's peaks to a custom database.
-        -   **AI-Powered Summary:** Generates concise descriptions of suggested compounds using **Google Gemini API**.
-        -   **PubChem Integration:** Fetches additional chemical details (formula, IUPAC name, SMILES, description) from the PubChem database.
+        -   **Multi-Spectrum Analysis:** Upload multiple CSVs or a single CSV with multiple intensity columns.
+        -   **Flexible Visualization:** Choose between **Overlay** and **Stacked** plots for your spectra.
+        -   **Automated Pre-processing:** Despiking and peak detection for each spectrum.
+        -   **Expert Rules:** Identifies common functional groups and provides diagnostic insights per spectrum, then consolidates them.
+        -   **Database Matching:** Suggests compounds by comparing your spectrum's peaks to a custom database, with aggregated confidence.
+        -   **AI-Powered Summary:** Generates concise descriptions of the highest confidence suggested compound using **Google Gemini API**.
+        -   **PubChem Integration:** Fetches additional chemical details (formula, IUPAC name, SMILES, description) from the PubChem database for the highest confidence compound.
         """)
 
 if __name__ == "__main__":
