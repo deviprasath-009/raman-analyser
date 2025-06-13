@@ -326,7 +326,7 @@ class RamanAnalyzer:
                 functionality = entry.get("compound_functionality", "N/A")
                 prompt_parts.append(f"- Range: {range_str}, Mode: {mode}, Functionality: {functionality}")
         
-        prompt_parts.append("\nConsidering these features, identify the most plausible chemical compounds that could be present in this sample. For each compound, provide a concise explanation of why it is suggested, linking it to the provided peaks and functional groups. Focus on compounds strongly indicated by the data.")
+        prompt_parts.append("\nConsidering these features, identify the most plausible chemical compounds that could be present in this sample. For each compound, provide a concise explanation of why it is suggested, linking it to the provided peaks and functional groups. Focus on compounds strongly indicated by the data,also give biological, minerals , biochemical and chemical with different combination of  peak to detect mixture of compound in the sample.")
         prompt_parts.append("Return your response as a JSON array of objects. Each object MUST have two keys: 'Compound' (string, the name of the chemical compound) and 'Reasoning' (string, a brief explanation). Do not include any introductory or concluding text outside the JSON array.")
 
         full_prompt = "\n".join(prompt_parts)
