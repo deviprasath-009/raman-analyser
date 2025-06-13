@@ -652,9 +652,9 @@ def main():
     #   {"wavenumber_range_cm-1": "2800-3000", "vibrational_mode": "C-H Stretch", "compound_functionality": "Alkanes"},
     #   ...
     # ]
-    LOCAL_FUNCTIONAL_GROUP_DB_PATH = os.path.join(script_directory, "https://raw.githubusercontent.com/deviprasath-009/raman-analyser/refs/heads/main/data/raw_raman_shiifts.json")
+    LOCAL_FUNCTIONAL_GROUP_DB_PATH = os.path.join(script_directory, "data/raw_raman_shiifts.json")
     # This path is for additional Raman shifts data provided to the AI for richer context
-    LOCAL_AI_RAMAN_SHIFTS_DB_PATH = os.path.join(script_directory, "https://raw.githubusercontent.com/deviprasath-009/raman-analyser/refs/heads/main/data/raw_raman_shiifts.json") 
+    LOCAL_AI_RAMAN_SHIFTS_DB_PATH = os.path.join(script_directory, "data/raw_raman_shiifts.json") 
 
     ML_MODEL_PATH = os.path.join(script_directory, "raman_mlp_model.joblib")
     
