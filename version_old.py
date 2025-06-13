@@ -400,7 +400,7 @@ def fetch_pubchem_data(compound_name: str) -> Dict[str, Any]:
 
 # ------------------------ Streamlit Interface ------------------------
 def main():
-    st.title("rudra's Raman Analyzer")
+    st.title("Analyzer")
     st.markdown("---")
 
     script_directory = os.path.dirname(os.path.abspath(__file__))
