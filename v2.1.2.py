@@ -942,3 +942,5 @@ def main():
 
     else:
         st.info("Please upload one or more Raman spectrum CSV files to begin analysis.")
+if __name__ == "__main__":
+    main()
