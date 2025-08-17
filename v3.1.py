@@ -216,7 +216,9 @@ class RamanAnalyzer:
 
         except Exception as e:
             st.error(f"AI deduction failed: {e}")
-            st.text_area("AI Raw Response (for debugging):", response.text, height=150)
+            # It's helpful to show the raw response for debugging
+            if 'response' in locals() and hasattr(response, 'text'):
+                st.text_area("AI Raw Response (for debugging):", response.text, height=150)
             return None
 
     def visualize(self, wavenumbers: np.ndarray, intensities: np.ndarray, detailed_peaks: List[Dict], label: str) -> plt.Figure:
@@ -308,6 +310,7 @@ def main():
             st.error("Analyzer is not initialized. Please check your API key and file paths.")
             return
         
+        # This is the corrected block with the full try...except structure
         try:
             df = pd.read_csv(uploaded_file)
             if df.shape[1] < 2:
@@ -359,8 +362,9 @@ def main():
                                 st.markdown(f"#### {item.get('compound', 'N/A')}")
                                 st.info(f"**Reasoning:** {item.get('reasoning', 'No reasoning provided.')}")
                             with col2:
-                                if st.button(f"Fetch PubChem Data for {item.get('compound', 'N/A')}", key=f"pubchem_{item.get('compound', 'N/A')}"):
-                                    pubchem_data = fetch_pubchem_data(item.get('compound'))
+                                compound_key = item.get('compound', 'N/A')
+                                if st.button(f"Fetch PubChem Data for {compound_key}", key=f"pubchem_{compound_key}"):
+                                    pubchem_data = fetch_pubchem_data(compound_key)
                                     if pubchem_data:
                                         st.json(pubchem_data)
 
@@ -377,12 +381,16 @@ def main():
                                 st.markdown(f"#### {item.get('compound', 'N/A')}")
                                 st.info(f"**Reasoning:** {item.get('reasoning', 'No reasoning provided.')}")
                             with col2:
-                                if st.button(f"Fetch PubChem Data for {item.get('compound', 'N/A')}", key=f"pubchem_mix_{item.get('compound', 'N/A')}"):
-                                    pubchem_data = fetch_pubchem_data(item.get('compound'))
+                                compound_key = item.get('compound', 'N/A')
+                                if st.button(f"Fetch PubChem Data for {compound_key}", key=f"pubchem_mix_{compound_key}"):
+                                    pubchem_data = fetch_pubchem_data(compound_key)
                                     if pubchem_data:
                                         st.json(pubchem_data)
                     else:
                         st.warning("The AI could not propose a plausible mixture.")
+        
+        except Exception as e:
+            st.error(f"An error occurred during file processing or analysis: {e}")
 
     else:
         st.info("Please upload a Raman spectrum file to begin the analysis.")
