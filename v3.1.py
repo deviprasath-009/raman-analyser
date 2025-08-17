@@ -156,21 +156,16 @@ class RamanAnalyzer:
             "processed_intensities": intensities
         }
 
-    # =============================================================================
-    # START: NEW AI FEATURE FOR BOND REFINEMENT
-    # =============================================================================
     def refine_bonds_with_ai(self, identified_bonds: List[Dict]) -> Optional[List[Dict]]:
         """Uses AI to resolve ambiguities where one peak maps to multiple functional groups."""
         if not self.ai_model:
             st.error("AI model not available.")
             return None
 
-        # Group possible assignments by peak
         peak_assignments = defaultdict(list)
         for bond in identified_bonds:
             peak_assignments[f"{bond['peak_center']:.1f}"].append(f"{bond['group']} ({bond['description']})")
 
-        # Identify which peaks are ambiguous
         ambiguous_peaks = {p: a for p, a in peak_assignments.items() if len(a) > 1}
         unambiguous_peaks = {p: a[0] for p, a in peak_assignments.items() if len(a) == 1}
 
@@ -207,11 +202,11 @@ class RamanAnalyzer:
             json_string = response.text.strip().replace("```json", "").replace("```", "").strip()
             ai_choices = json.loads(json_string)
 
-            # Reconstruct the final, refined list of bonds
             refined_bonds = [b for b in identified_bonds if f"{b['peak_center']:.1f}" in unambiguous_peaks]
             for choice in ai_choices:
-                peak_center_float = float(choice['peak_center'])
-                # Find the original bond info that matches the AI's choice
+                peak_center_str = str(choice['peak_center']).split(' ')[0]
+                peak_center_float = float(peak_center_str)
+                
                 for original_bond in identified_bonds:
                     if np.isclose(original_bond['peak_center'], peak_center_float) and choice['chosen_assignment'] == f"{original_bond['group']} ({original_bond['description']})":
                         refined_bonds.append(original_bond)
@@ -223,9 +218,6 @@ class RamanAnalyzer:
             st.error(f"AI refinement failed: {e}")
             if 'response' in locals(): st.text_area("AI Raw Response:", response.text)
             return None
-    # =============================================================================
-    # END: NEW AI FEATURE
-    # =============================================================================
 
     def deduce_compounds_ai(self, identified_bonds: List[Dict]) -> Optional[Dict]:
         """Uses AI to deduce plausible compounds from a list of identified bonds."""
@@ -412,11 +404,13 @@ def main():
                 if ai_deductions:
                     st.subheader("Case 1: Pure Substance Hypothesis")
                     for item in ai_deductions.get('pure_substance', []):
-                        self.display_deduction(item)
+                        # **FIX APPLIED HERE**
+                        display_deduction(item)
 
                     st.subheader("Case 2: Mixture Hypothesis")
                     for item in ai_deductions.get('mixture', []):
-                        self.display_deduction(item, is_mixture=True)
+                        # **FIX APPLIED HERE**
+                        display_deduction(item, is_mixture=True)
         
         except Exception as e:
             st.error(f"An error occurred during file processing or analysis: {e}")
