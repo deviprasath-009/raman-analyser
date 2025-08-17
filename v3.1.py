@@ -1,6 +1,6 @@
 # Advanced AI Raman Expert System
 # This is a rebuilt version focusing on a core expert system complemented by AI deduction.
-# Version 5: Added an AI-powered bond refinement step to resolve ambiguities.
+# Version 7: Re-integrated multi-file support and stacked/overlay plotting.
 
 import numpy as np
 import pandas as pd
@@ -25,10 +25,6 @@ def gaussian(x, amplitude, center, sigma):
     """Gaussian peak model."""
     return amplitude * np.exp(-(x - center)**2 / (2 * sigma**2))
 
-def lorentzian(x, amplitude, center, gamma):
-    """Lorentzian peak model."""
-    return amplitude * gamma**2 / ((x - center)**2 + gamma**2)
-
 # =============================================================================
 # 1. PEAK ANALYZER MODULE
 # =============================================================================
@@ -37,7 +33,7 @@ class PeakAnalyzer:
 
     def detect_peaks(self, wavenumbers: np.ndarray, intensities: np.ndarray) -> Tuple[np.ndarray, Dict]:
         """Detects significant peaks in the spectrum."""
-        prominence = np.std(intensities) * 0.75 
+        prominence = np.std(intensities) * 0.1 # Lowered for sensitivity on normalized data
         peaks, properties = find_peaks(intensities, prominence=prominence, distance=15, width=3)
         return peaks, properties
 
@@ -58,18 +54,15 @@ class PeakAnalyzer:
             params, _ = curve_fit(gaussian, x_fit, y_fit, p0=[amplitude_guess, center_guess, sigma_guess])
             amplitude, center, sigma = params
             fwhm = 2.355 * abs(sigma)
-            shape = "Gaussian"
         except RuntimeError:
-            return {"center": center_guess, "height": amplitude_guess, "fwhm": 0, "shape": "Unknown"}
+            return {"center": center_guess, "height": amplitude_guess, "fwhm": 0}
 
-        return {"center": center, "height": amplitude, "fwhm": fwhm, "shape": shape}
+        return {"center": center, "height": amplitude, "fwhm": fwhm}
 
     def analyze(self, wavenumbers: np.ndarray, intensities: np.ndarray) -> List[Dict]:
         """Full peak analysis workflow."""
         peak_indices, _ = self.detect_peaks(wavenumbers, intensities)
-        
         detailed_peaks = [self.fit_peak_shape(wavenumbers, intensities, p_idx) for p_idx in peak_indices]
-            
         return detailed_peaks
 
 # =============================================================================
@@ -82,21 +75,18 @@ class ExpertSystem:
         self.correlation_table = correlation_table
 
     def deduce_bonds(self, detailed_peaks: List[Dict]) -> List[Dict]:
-        """Matches peaks against the correlation table to deduce all possible bond details."""
+        """Matches peaks against the correlation table, including intensity and shape."""
         identified_bonds = []
-        
         for peak in detailed_peaks:
             peak_center = peak['center']
             for rule in self.correlation_table:
-                min_wn = float(rule.get("min_wavenumber", 0))
-                max_wn = float(rule.get("max_wavenumber", 0))
-
-                lower_bound = min(min_wn, max_wn)
-                upper_bound = max(min_wn, max_wn)
+                min_wn, max_wn = float(rule.get("min_wavenumber", 0)), float(rule.get("max_wavenumber", 0))
+                lower_bound, upper_bound = min(min_wn, max_wn), max(min_wn, max_wn)
 
                 if lower_bound <= peak_center <= upper_bound:
                     bond_info = {
                         "peak_center": peak_center,
+                        "relative_height": peak['height'],
                         "fwhm": peak['fwhm'],
                         "group": rule.get("group", "Unknown"),
                         "description": rule.get("description", "N/A")
@@ -105,7 +95,6 @@ class ExpertSystem:
         
         unique_bonds = [dict(t) for t in {tuple(d.items()) for d in identified_bonds}]
         return sorted(unique_bonds, key=lambda x: x['peak_center'])
-
 
 # =============================================================================
 # 3. CORE ANALYZER & AI MODULE
@@ -131,12 +120,10 @@ class RamanAnalyzer:
             self._init_messages.append({"type": "error", "text": f"Error initializing Gemini model: {e}."})
 
     def _load_json_data(self, path: str) -> Tuple[List[Dict], Optional[str], Optional[str]]:
-        """Loads the correlation table from a local JSON file."""
         if not path or not os.path.exists(path):
             return [], None, f"Correlation table not found at: {path}"
         try:
-            with open(path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
+            with open(path, 'r', encoding='utf-8') as f: data = json.load(f)
             return data, f"Successfully loaded correlation table from {os.path.basename(path)}.", None
         except Exception as e:
             return [], None, f"Error loading or parsing {os.path.basename(path)}: {e}"
@@ -145,142 +132,152 @@ class RamanAnalyzer:
         return self._init_messages
 
     def run_analysis(self, wavenumbers: np.ndarray, intensities: np.ndarray) -> Dict[str, Any]:
-        """Runs the full analysis pipeline."""
-        detailed_peaks = self.peak_analyzer.analyze(wavenumbers, intensities)
+        """Runs the full analysis pipeline, including intensity normalization."""
+        max_intensity = np.max(intensities)
+        normalized_intensities = intensities / max_intensity if max_intensity > 0 else intensities
+
+        detailed_peaks = self.peak_analyzer.analyze(wavenumbers, normalized_intensities)
         identified_bonds = self.expert_system.deduce_bonds(detailed_peaks)
         
         return {
             "detailed_peaks": detailed_peaks,
             "identified_bonds": identified_bonds,
             "processed_wavenumbers": wavenumbers,
-            "processed_intensities": intensities
+            "processed_intensities": normalized_intensities
         }
 
+    def _describe_peak_for_ai(self, bond: Dict) -> str:
+        """Converts numerical peak data into a descriptive string for AI prompts."""
+        height = bond.get('relative_height', 0)
+        if height > 0.7: intensity = "very strong"
+        elif height > 0.4: intensity = "strong"
+        elif height > 0.1: intensity = "medium"
+        else: intensity = "weak"
+        
+        fwhm = bond.get('fwhm', 0)
+        shape = "sharp" if 0 < fwhm < 25 else "broad" if fwhm >= 25 else ""
+        
+        return f"A {intensity}{' ' + shape if shape else ''} peak"
+
     def refine_bonds_with_ai(self, identified_bonds: List[Dict]) -> Optional[List[Dict]]:
-        """Uses AI to resolve ambiguities where one peak maps to multiple functional groups."""
-        if not self.ai_model:
-            st.error("AI model not available.")
-            return None
+        """Uses AI to resolve ambiguities using peak intensity and shape as context."""
+        if not self.ai_model: return None
 
         peak_assignments = defaultdict(list)
         for bond in identified_bonds:
-            peak_assignments[f"{bond['peak_center']:.1f}"].append(f"{bond['group']} ({bond['description']})")
+            peak_assignments[f"{bond['peak_center']:.1f}"].append(bond)
 
-        ambiguous_peaks = {p: a for p, a in peak_assignments.items() if len(a) > 1}
-        unambiguous_peaks = {p: a[0] for p, a in peak_assignments.items() if len(a) == 1}
+        ambiguous_peaks = {p: bonds for p, bonds in peak_assignments.items() if len(bonds) > 1}
+        unambiguous_peaks = {p: bonds[0] for p, bonds in peak_assignments.items() if len(bonds) == 1}
 
         if not ambiguous_peaks:
-            st.success("No ambiguities found. All peaks have a single functional group assignment.")
+            st.success("No ambiguities found.")
             return identified_bonds
 
         prompt_parts = [
-            "You are an expert chemist. Your task is to resolve ambiguities in a Raman spectrum analysis. I will provide you with a list of unambiguous assignments and a list of ambiguous ones. Use the context of the unambiguous peaks to determine the most likely assignment for each ambiguous peak.",
+            "You are an expert chemist resolving ambiguities in a Raman spectrum. Use the context of the unambiguous peaks to determine the most likely assignment for each ambiguous peak. Consider peak intensity and shape.",
             "\n**Unambiguous Evidence (High Confidence):**"
         ]
-        if unambiguous_peaks:
-            for peak, assignment in unambiguous_peaks.items():
-                prompt_parts.append(f"- Peak at ~{peak} cm⁻¹ is confidently assigned to **{assignment}**.")
-        else:
-            prompt_parts.append("- None.")
+        for peak, bond in unambiguous_peaks.items():
+            desc = self._describe_peak_for_ai(bond)
+            prompt_parts.append(f"- {desc} at ~{peak} cm⁻¹ is **{bond['group']} ({bond['description']})**.")
 
         prompt_parts.append("\n**Ambiguous Peaks to Resolve:**")
-        for peak, assignments in ambiguous_peaks.items():
-            options = "' OR '".join(assignments)
-            prompt_parts.append(f"- Peak at ~{peak} cm⁻¹ could be: '**{options}**'.")
+        for peak, bonds in ambiguous_peaks.items():
+            desc = self._describe_peak_for_ai(bonds[0])
+            options = "' OR '".join([f"{b['group']} ({b['description']})" for b in bonds])
+            prompt_parts.append(f"- {desc} at ~{peak} cm⁻¹ could be: '**{options}**'.")
         
-        prompt_parts.append("\n**Your Task:**")
-        prompt_parts.append("For each ambiguous peak, choose the single most plausible assignment. Provide a brief chemical reasoning for your choice, considering what other functional groups are present. Return a JSON array of objects, where each object has three keys: 'peak_center' (string), 'chosen_assignment' (string), and 'reasoning' (string).")
-
-        full_prompt = "\n".join(prompt_parts)
+        prompt_parts.append("\n**Your Task:** For each ambiguous peak, choose the single most plausible assignment. Return a JSON array of objects, each with 'peak_center' (string), 'chosen_assignment' (string), and 'reasoning' (string).")
 
         try:
             with st.spinner("AI is resolving bond ambiguities..."):
-                response = self.ai_model.generate_content(
-                    full_prompt,
-                    generation_config={"response_mime_type": "application/json"}
-                )
-            json_string = response.text.strip().replace("```json", "").replace("```", "").strip()
-            ai_choices = json.loads(json_string)
+                response = self.ai_model.generate_content("\n".join(prompt_parts), generation_config={"response_mime_type": "application/json"})
+            ai_choices = json.loads(response.text.strip().replace("```json", "").replace("```", "").strip())
 
-            refined_bonds = [b for b in identified_bonds if f"{b['peak_center']:.1f}" in unambiguous_peaks]
+            refined_bonds = list(unambiguous_peaks.values())
             for choice in ai_choices:
                 peak_center_str = str(choice['peak_center']).split(' ')[0]
                 peak_center_float = float(peak_center_str)
-                
                 for original_bond in identified_bonds:
                     if np.isclose(original_bond['peak_center'], peak_center_float) and choice['chosen_assignment'] == f"{original_bond['group']} ({original_bond['description']})":
                         refined_bonds.append(original_bond)
                         break
-            
             return sorted(refined_bonds, key=lambda x: x['peak_center'])
-
         except Exception as e:
             st.error(f"AI refinement failed: {e}")
             if 'response' in locals(): st.text_area("AI Raw Response:", response.text)
             return None
 
     def deduce_compounds_ai(self, identified_bonds: List[Dict]) -> Optional[Dict]:
-        """Uses AI to deduce plausible compounds from a list of identified bonds."""
-        if not self.ai_model:
-            st.error("AI model not available.")
-            return None
-        if not identified_bonds:
-            st.warning("No bonds identified, cannot deduce compounds.")
-            return None
+        """Uses AI to deduce compounds from a list of bonds, considering intensity and shape."""
+        if not self.ai_model: return None
+        if not identified_bonds: return None
 
         prompt_parts = [
-            "You are an expert chemist. Based on the following high-confidence list of identified functional groups, deduce the chemical identity of the sample.",
-            "Consider two possibilities: a single pure substance or a mixture of simple compounds.",
+            "You are an expert chemist. Based on the following high-confidence list of identified functional groups, deduce the chemical identity of the sample. Pay close attention to the relative intensities and shapes of the peaks.",
             "\n**EVIDENCE - Identified Bonds and Functional Groups:**"
         ]
         for bond in identified_bonds:
-            peak_desc = "sharp" if bond['fwhm'] < 20 else "broad"
-            prompt_parts.append(f"- A {peak_desc} peak at ~{bond['peak_center']:.0f} cm⁻¹ assigned to: **{bond['group']} ({bond['description']})**.")
+            desc = self._describe_peak_for_ai(bond)
+            prompt_parts.append(f"- {desc} at ~{bond['peak_center']:.0f} cm⁻¹ assigned to: **{bond['group']} ({bond['description']})**.")
 
-        prompt_parts.append("\n**ANALYSIS TASK:**")
-        prompt_parts.append("1.  **Pure Substance Scenario:** Propose the most likely single chemical compound that contains ALL the identified functional groups. Provide clear reasoning.")
-        prompt_parts.append("2.  **Mixture Scenario:** Propose a plausible, simple mixture of 2-3 common compounds that collectively explains all identified groups.")
-        prompt_parts.append("\nReturn your analysis in a single JSON object with two top-level keys: 'pure_substance' and 'mixture'. Each key should contain a list of objects, where each object has 'compound' and 'reasoning' keys.")
-
-        full_prompt = "\n".join(prompt_parts)
+        prompt_parts.append("\n**ANALYSIS TASK:** Propose the most likely pure substance and a plausible simple mixture that explains this evidence. Return your analysis in a single JSON object with 'pure_substance' and 'mixture' keys, each containing a list of objects with 'compound' and 'reasoning' keys.")
 
         try:
             with st.spinner("AI is deducing chemical structures from refined evidence..."):
-                response = self.ai_model.generate_content(
-                    full_prompt,
-                    generation_config={"response_mime_type": "application/json"}
-                )
-            
-            json_string = response.text.strip().replace("```json", "").replace("```", "").strip()
-            return json.loads(json_string)
-
+                response = self.ai_model.generate_content("\n".join(prompt_parts), generation_config={"response_mime_type": "application/json"})
+            return json.loads(response.text.strip().replace("```json", "").replace("```", "").strip())
         except Exception as e:
             st.error(f"AI deduction failed: {e}")
             if 'response' in locals(): st.text_area("AI Raw Response:", response.text)
             return None
 
-    def visualize(self, wavenumbers: np.ndarray, intensities: np.ndarray, detailed_peaks: List[Dict], label: str) -> plt.Figure:
-        """Generates a plot of the spectrum and its identified peaks."""
-        fig, ax = plt.subplots(figsize=(12, 6))
-        
-        ax.plot(wavenumbers, intensities, label=label, color='royalblue', linewidth=1.5)
-        
-        peak_centers = [p['center'] for p in detailed_peaks]
-        peak_heights = [p['height'] for p in detailed_peaks]
-        
-        ax.scatter(peak_centers, peak_heights, color='red', s=50, zorder=5, edgecolor='black', label='Detected Peaks')
+    # =============================================================================
+    # START: REBUILT VISUALIZE FUNCTION FOR MULTI-FILE SUPPORT
+    # =============================================================================
+    def visualize(self, spectra_data: List[Dict[str, Any]], plot_type: str) -> plt.Figure:
+        """Generates a plot of multiple spectra with overlay or stacked options."""
+        plt.style.use('seaborn-v0_8-darkgrid')
 
-        for peak in detailed_peaks:
-            ax.text(peak['center'], peak['height'], f" {peak['center']:.0f}", fontsize=9, verticalalignment='bottom')
+        if plot_type == "overlay":
+            fig, ax = plt.subplots(figsize=(12, 6))
+            ax.set_title("Raman Spectra (Overlay)", fontsize=16)
+            for i, data in enumerate(spectra_data):
+                color = plt.cm.viridis(i / len(spectra_data))
+                ax.plot(data['processed_wavenumbers'], data['processed_intensities'], label=data['label'], color=color, linewidth=1.5)
+                peak_centers = [p['center'] for p in data['detailed_peaks']]
+                peak_heights = [p['height'] for p in data['detailed_peaks']]
+                ax.scatter(peak_centers, peak_heights, color=color, s=40, zorder=5, edgecolor='black')
+            ax.legend()
+            ax.set_ylabel("Normalized Intensity", fontsize=12)
 
-        ax.set_title(f"Raman Spectrum: {label}", fontsize=16)
+        elif plot_type == "stacked":
+            fig, axes = plt.subplots(nrows=len(spectra_data), figsize=(12, 2 * len(spectra_data)), sharex=True, squeeze=False)
+            axes = axes.flatten()
+            fig.suptitle("Raman Spectra (Stacked)", fontsize=16, y=0.99)
+            
+            for i, data in enumerate(spectra_data):
+                ax = axes[i]
+                offset = i * 1.1 # Offset for stacking
+                ax.plot(data['processed_wavenumbers'], data['processed_intensities'] + offset, label=data['label'], color='royalblue', linewidth=1.5)
+                peak_centers = [p['center'] for p in data['detailed_peaks']]
+                peak_heights = [p['height'] for p in data['detailed_peaks']]
+                ax.scatter(peak_centers, [h + offset for h in peak_heights], color='red', s=40, zorder=5, edgecolor='black')
+                ax.set_ylabel(data['label'], rotation=0, labelpad=40, ha='right', va='center')
+                ax.set_yticks([])
+            fig.text(0.06, 0.5, 'Normalized Intensity (Offset)', va='center', rotation='vertical', fontsize=12)
+            ax = axes[-1] # Use the last axis for shared properties
+
         ax.set_xlabel("Raman Shift (cm⁻¹)", fontsize=12)
-        ax.set_ylabel("Intensity (Arbitrary Units)", fontsize=12)
         ax.invert_xaxis()
         ax.grid(True, linestyle='--', alpha=0.6)
-        ax.legend()
         plt.tight_layout()
+        plt.subplots_adjust(top=0.95)
         return fig
+    # =============================================================================
+    # END: REBUILT VISUALIZE FUNCTION
+    # =============================================================================
 
 # --- PubChem API Integration ---
 @st.cache_data(show_spinner="Fetching data from PubChem...")
@@ -291,11 +288,9 @@ def fetch_pubchem_data(compound_name: str) -> Optional[Dict[str, Any]]:
         cid_response = requests.get(f"{base_url}/compound/name/{compound_name}/cids/JSON", timeout=10)
         cid_response.raise_for_status()
         cid = cid_response.json()['IdentifierList']['CID'][0]
-
         props_response = requests.get(f"{base_url}/compound/cid/{cid}/property/MolecularFormula,IUPACName,CanonicalSMILES/JSON", timeout=10)
         props_response.raise_for_status()
         properties = props_response.json()['PropertyTable']['Properties'][0]
-
         return {"cid": cid, **properties}
     except Exception as e:
         st.error(f"Could not fetch data for '{compound_name}' from PubChem: {e}")
@@ -308,115 +303,88 @@ def main():
     st.title("🔬 Advanced AI Raman Expert System")
     st.markdown("A focused tool for peak analysis, bond correlation, and AI-powered compound deduction.")
 
-    # --- Initialization ---
-    CORRELATION_TABLE_PATH = "data/raw_raman_shiifts.json"
-    
     if 'analyzer' not in st.session_state:
         gemini_api_key = st.secrets.get("GEMINI_API_KEY")
         if not gemini_api_key:
-            st.error("GEMINI_API_KEY not found in Streamlit secrets. AI features will be disabled.")
+            st.error("GEMINI_API_KEY not found in Streamlit secrets.")
             st.session_state.analyzer = None
         else:
             try:
                 genai.configure(api_key=gemini_api_key)
-                st.session_state.analyzer = RamanAnalyzer(CORRELATION_TABLE_PATH)
+                st.session_state.analyzer = RamanAnalyzer("data/raw_raman_shiifts.json")
             except Exception as e:
                 st.error(f"Failed to configure Google AI: {e}")
                 st.session_state.analyzer = None
     
     analyzer = st.session_state.analyzer
-
     if analyzer:
-        with st.expander("Show Initialization Status", expanded=False):
+        with st.expander("Show Initialization Status"):
             for msg in analyzer.get_init_messages():
-                if msg["type"] == "error": st.error(msg["text"])
-                else: st.success(msg["text"])
+                st.info(msg["text"]) if msg["type"] != "error" else st.error(msg["text"])
 
-    # --- Sidebar for Data Upload ---
     st.sidebar.header("📂 Upload Spectrum Data")
-    uploaded_file = st.sidebar.file_uploader(
-        "Upload a single Raman Spectrum (CSV)",
+    uploaded_files = st.sidebar.file_uploader(
+        "Upload one or more Raman Spectra (CSV)", 
         type=["csv"],
-        help="CSV file must have two columns: Wavenumber and Intensity."
+        accept_multiple_files=True
     )
 
-    if uploaded_file:
-        if not analyzer:
-            st.error("Analyzer is not initialized. Please check your API key and file paths.")
-            return
+    if uploaded_files and analyzer:
+        all_results = []
+        for uploaded_file in uploaded_files:
+            try:
+                df = pd.read_csv(uploaded_file)
+                wavenumbers, intensities = df.iloc[:, 0].values, df.iloc[:, 1].values
+                analysis_results = analyzer.run_analysis(wavenumbers, intensities)
+                analysis_results['label'] = uploaded_file.name
+                all_results.append(analysis_results)
+            except Exception as e:
+                st.error(f"Error processing {uploaded_file.name}: {e}")
         
-        try:
-            df = pd.read_csv(uploaded_file)
-            if df.shape[1] < 2:
-                st.error("Invalid CSV format. Please provide a two-column file.")
-                return
-            
-            wavenumbers = df.iloc[:, 0].values
-            intensities = df.iloc[:, 1].values
-            
-            # --- Store results in session state to manage workflow ---
-            if 'analysis_results' not in st.session_state or st.session_state.get('current_file') != uploaded_file.name:
-                st.session_state.analysis_results = analyzer.run_analysis(wavenumbers, intensities)
-                st.session_state.current_file = uploaded_file.name
-                if 'refined_bonds' in st.session_state:
-                    del st.session_state.refined_bonds # Clear refined bonds for new file
+        st.session_state.all_results = all_results
 
-            analysis_results = st.session_state.analysis_results
-            
-            st.header("📊 Analysis Results")
-            st.subheader("Spectrum Plot and Detected Peaks")
-            fig = analyzer.visualize(
-                analysis_results['processed_wavenumbers'],
-                analysis_results['processed_intensities'],
-                analysis_results['detailed_peaks'],
-                uploaded_file.name
-            )
-            st.pyplot(fig, use_container_width=True)
-
-            st.subheader("Step 1: Expert System - Initial Bond Identification")
-            bonds_df = pd.DataFrame(analysis_results['identified_bonds'])
-            if not bonds_df.empty:
-                st.dataframe(bonds_df.style.format({'peak_center': '{:.1f}', 'fwhm': '{:.2f}'}), use_container_width=True)
-            else:
-                st.info("No functional groups could be identified.")
-
-            # --- NEW WORKFLOW STEP: AI REFINEMENT ---
-            st.subheader("Step 2: AI-Powered Bond Refinement")
-            if st.button("Refine Bond Assignments (AI)"):
-                refined_list = analyzer.refine_bonds_with_ai(analysis_results['identified_bonds'])
-                if refined_list:
-                    st.session_state.refined_bonds = refined_list
-            
-            if 'refined_bonds' in st.session_state:
-                st.success("Bond assignments have been refined by the AI.")
-                refined_df = pd.DataFrame(st.session_state.refined_bonds)
-                st.dataframe(refined_df.style.format({'peak_center': '{:.1f}', 'fwhm': '{:.2f}'}), use_container_width=True)
-
-            # --- AI Deduction Section ---
-            st.header("Step 3: AI-Powered Compound Deduction")
-            
-            # Decide which list of bonds to use for deduction
-            bonds_for_deduction = st.session_state.get('refined_bonds', analysis_results['identified_bonds'])
-            
-            if st.button("Deduce Plausible Compounds (AI)"):
-                ai_deductions = analyzer.deduce_compounds_ai(bonds_for_deduction)
-                
-                if ai_deductions:
-                    st.subheader("Case 1: Pure Substance Hypothesis")
-                    for item in ai_deductions.get('pure_substance', []):
-                        # **FIX APPLIED HERE**
-                        display_deduction(item)
-
-                    st.subheader("Case 2: Mixture Hypothesis")
-                    for item in ai_deductions.get('mixture', []):
-                        # **FIX APPLIED HERE**
-                        display_deduction(item, is_mixture=True)
+    if 'all_results' in st.session_state:
+        results = st.session_state.all_results
         
-        except Exception as e:
-            st.error(f"An error occurred during file processing or analysis: {e}")
+        st.header("📊 Analysis Results")
+        
+        plot_type = st.radio("Select Plot Type", ("Overlay", "Stacked"), horizontal=True)
+        st.pyplot(analyzer.visualize(results, plot_type.lower()))
 
-    else:
-        st.info("Please upload a Raman spectrum file to begin the analysis.")
+        # Aggregate all identified bonds for analysis
+        all_identified_bonds = []
+        for res in results:
+            all_identified_bonds.extend(res['identified_bonds'])
+        # Remove duplicates from aggregation
+        all_identified_bonds = [dict(t) for t in {tuple(d.items()) for d in all_identified_bonds}]
+        all_identified_bonds = sorted(all_identified_bonds, key=lambda x: x['peak_center'])
+        
+        st.session_state.all_bonds = all_identified_bonds
+
+        st.subheader("Step 1: Expert System - Aggregated Bond Identification")
+        if all_identified_bonds:
+            st.dataframe(pd.DataFrame(all_identified_bonds).style.format({'peak_center': '{:.1f}', 'relative_height': '{:.2f}', 'fwhm': '{:.2f}'}))
+
+        st.subheader("Step 2: AI-Powered Bond Refinement")
+        if st.button("Refine All Bond Assignments (AI)"):
+            st.session_state.refined_bonds = analyzer.refine_bonds_with_ai(st.session_state.all_bonds)
+        
+        if 'refined_bonds' in st.session_state and st.session_state.refined_bonds is not None:
+            st.success("Bond assignments have been refined by the AI.")
+            st.dataframe(pd.DataFrame(st.session_state.refined_bonds).style.format({'peak_center': '{:.1f}', 'relative_height': '{:.2f}', 'fwhm': '{:.2f}'}))
+
+        st.header("Step 3: AI-Powered Compound Deduction")
+        bonds_for_deduction = st.session_state.get('refined_bonds', st.session_state.get('all_bonds'))
+        if st.button("Deduce Plausible Compounds (AI)"):
+            ai_deductions = analyzer.deduce_compounds_ai(bonds_for_deduction)
+            if ai_deductions:
+                st.session_state.ai_deductions = ai_deductions
+        
+        if 'ai_deductions' in st.session_state:
+            st.subheader("Case 1: Pure Substance Hypothesis")
+            for item in st.session_state.ai_deductions.get('pure_substance', []): display_deduction(item)
+            st.subheader("Case 2: Mixture Hypothesis")
+            for item in st.session_state.ai_deductions.get('mixture', []): display_deduction(item, is_mixture=True)
 
 def display_deduction(item: Dict, is_mixture: bool = False):
     """Helper function to display AI deduction results and PubChem button."""
@@ -426,13 +394,11 @@ def display_deduction(item: Dict, is_mixture: bool = False):
         st.markdown(f"#### {compound_key}")
         st.info(f"**Reasoning:** {item.get('reasoning', 'No reasoning provided.')}")
     with col2:
-        # Create a unique key for each button
         button_key = f"pubchem_{'mix' if is_mixture else 'pure'}_{compound_key.replace(' ', '_')}"
         if st.button(f"Fetch PubChem Data", key=button_key):
             with st.spinner(f"Fetching data for {compound_key}..."):
                 pubchem_data = fetch_pubchem_data(compound_key)
-                if pubchem_data:
-                    st.json(pubchem_data)
+                if pubchem_data: st.json(pubchem_data)
 
 if __name__ == "__main__":
     main()
