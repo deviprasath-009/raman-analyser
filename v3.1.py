@@ -234,7 +234,7 @@ class RamanAnalyzer:
             return None
 
     # =============================================================================
-    # START: REBUILT VISUALIZE FUNCTION FOR MULTI-FILE SUPPORT
+    # START: CORRECTED VISUALIZE FUNCTION
     # =============================================================================
     def visualize(self, spectra_data: List[Dict[str, Any]], plot_type: str) -> plt.Figure:
         """Generates a plot of multiple spectra with overlay or stacked options."""
@@ -249,34 +249,43 @@ class RamanAnalyzer:
                 peak_centers = [p['center'] for p in data['detailed_peaks']]
                 peak_heights = [p['height'] for p in data['detailed_peaks']]
                 ax.scatter(peak_centers, peak_heights, color=color, s=40, zorder=5, edgecolor='black')
+            
             ax.legend()
             ax.set_ylabel("Normalized Intensity", fontsize=12)
+            ax.set_xlabel("Raman Shift (cm⁻¹)", fontsize=12)
+            ax.invert_xaxis()
+            ax.grid(True, linestyle='--', alpha=0.6)
 
         elif plot_type == "stacked":
-            fig, axes = plt.subplots(nrows=len(spectra_data), figsize=(12, 2 * len(spectra_data)), sharex=True, squeeze=False)
+            fig, axes = plt.subplots(nrows=len(spectra_data), figsize=(12, 2.5 * len(spectra_data)), sharex=True, squeeze=False)
             axes = axes.flatten()
             fig.suptitle("Raman Spectra (Stacked)", fontsize=16, y=0.99)
             
             for i, data in enumerate(spectra_data):
                 ax = axes[i]
-                offset = i * 1.1 # Offset for stacking
+                offset = i * 1.1 
                 ax.plot(data['processed_wavenumbers'], data['processed_intensities'] + offset, label=data['label'], color='royalblue', linewidth=1.5)
                 peak_centers = [p['center'] for p in data['detailed_peaks']]
                 peak_heights = [p['height'] for p in data['detailed_peaks']]
                 ax.scatter(peak_centers, [h + offset for h in peak_heights], color='red', s=40, zorder=5, edgecolor='black')
                 ax.set_ylabel(data['label'], rotation=0, labelpad=40, ha='right', va='center')
                 ax.set_yticks([])
+                ax.grid(True, linestyle='--', alpha=0.6)
+            
             fig.text(0.06, 0.5, 'Normalized Intensity (Offset)', va='center', rotation='vertical', fontsize=12)
-            ax = axes[-1] # Use the last axis for shared properties
-
-        ax.set_xlabel("Raman Shift (cm⁻¹)", fontsize=12)
-        ax.invert_xaxis()
-        ax.grid(True, linestyle='--', alpha=0.6)
-        plt.tight_layout()
-        plt.subplots_adjust(top=0.95)
+            
+            # Apply shared settings only to the last axis
+            last_ax = axes[-1]
+            last_ax.set_xlabel("Raman Shift (cm⁻¹)", fontsize=12)
+            last_ax.invert_xaxis()
+        
+        # Use figure-level tight layout
+        fig.tight_layout()
+        # Adjust subplot spacing after tight_layout
+        plt.subplots_adjust(top=0.95 if plot_type == "stacked" else 0.92)
         return fig
     # =============================================================================
-    # END: REBUILT VISUALIZE FUNCTION
+    # END: CORRECTED VISUALIZE FUNCTION
     # =============================================================================
 
 # --- PubChem API Integration ---
@@ -329,19 +338,27 @@ def main():
         accept_multiple_files=True
     )
 
+    # Clear previous results if files are changed
+    if 'current_files' not in st.session_state: st.session_state.current_files = []
+    if [f.name for f in uploaded_files] != st.session_state.current_files:
+        for key in ['all_results', 'all_bonds', 'refined_bonds', 'ai_deductions']:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.session_state.current_files = [f.name for f in uploaded_files]
+
     if uploaded_files and analyzer:
-        all_results = []
-        for uploaded_file in uploaded_files:
-            try:
-                df = pd.read_csv(uploaded_file)
-                wavenumbers, intensities = df.iloc[:, 0].values, df.iloc[:, 1].values
-                analysis_results = analyzer.run_analysis(wavenumbers, intensities)
-                analysis_results['label'] = uploaded_file.name
-                all_results.append(analysis_results)
-            except Exception as e:
-                st.error(f"Error processing {uploaded_file.name}: {e}")
-        
-        st.session_state.all_results = all_results
+        if 'all_results' not in st.session_state:
+            all_results = []
+            for uploaded_file in uploaded_files:
+                try:
+                    df = pd.read_csv(uploaded_file)
+                    wavenumbers, intensities = df.iloc[:, 0].values, df.iloc[:, 1].values
+                    analysis_results = analyzer.run_analysis(wavenumbers, intensities)
+                    analysis_results['label'] = uploaded_file.name
+                    all_results.append(analysis_results)
+                except Exception as e:
+                    st.error(f"Error processing {uploaded_file.name}: {e}")
+            st.session_state.all_results = all_results
 
     if 'all_results' in st.session_state:
         results = st.session_state.all_results
@@ -352,29 +369,30 @@ def main():
         st.pyplot(analyzer.visualize(results, plot_type.lower()))
 
         # Aggregate all identified bonds for analysis
-        all_identified_bonds = []
-        for res in results:
-            all_identified_bonds.extend(res['identified_bonds'])
-        # Remove duplicates from aggregation
-        all_identified_bonds = [dict(t) for t in {tuple(d.items()) for d in all_identified_bonds}]
-        all_identified_bonds = sorted(all_identified_bonds, key=lambda x: x['peak_center'])
+        if 'all_bonds' not in st.session_state:
+            all_identified_bonds = []
+            for res in results:
+                all_identified_bonds.extend(res['identified_bonds'])
+            # Remove duplicates from aggregation
+            all_identified_bonds = [dict(t) for t in {tuple(d.items()) for d in all_identified_bonds}]
+            st.session_state.all_bonds = sorted(all_identified_bonds, key=lambda x: x['peak_center'])
         
-        st.session_state.all_bonds = all_identified_bonds
+        all_bonds = st.session_state.all_bonds
 
         st.subheader("Step 1: Expert System - Aggregated Bond Identification")
-        if all_identified_bonds:
-            st.dataframe(pd.DataFrame(all_identified_bonds).style.format({'peak_center': '{:.1f}', 'relative_height': '{:.2f}', 'fwhm': '{:.2f}'}))
+        if all_bonds:
+            st.dataframe(pd.DataFrame(all_bonds).style.format({'peak_center': '{:.1f}', 'relative_height': '{:.2f}', 'fwhm': '{:.2f}'}))
 
         st.subheader("Step 2: AI-Powered Bond Refinement")
         if st.button("Refine All Bond Assignments (AI)"):
-            st.session_state.refined_bonds = analyzer.refine_bonds_with_ai(st.session_state.all_bonds)
+            st.session_state.refined_bonds = analyzer.refine_bonds_with_ai(all_bonds)
         
         if 'refined_bonds' in st.session_state and st.session_state.refined_bonds is not None:
             st.success("Bond assignments have been refined by the AI.")
             st.dataframe(pd.DataFrame(st.session_state.refined_bonds).style.format({'peak_center': '{:.1f}', 'relative_height': '{:.2f}', 'fwhm': '{:.2f}'}))
 
         st.header("Step 3: AI-Powered Compound Deduction")
-        bonds_for_deduction = st.session_state.get('refined_bonds', st.session_state.get('all_bonds'))
+        bonds_for_deduction = st.session_state.get('refined_bonds', all_bonds)
         if st.button("Deduce Plausible Compounds (AI)"):
             ai_deductions = analyzer.deduce_compounds_ai(bonds_for_deduction)
             if ai_deductions:
